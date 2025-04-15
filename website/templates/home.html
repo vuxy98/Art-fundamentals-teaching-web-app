@@ -1,0 +1,20 @@
+<!-- Home page, accessible by guests -->
+{% extends "base.html" %}
+{% block content %}
+    <h2>Courses</h2>
+        {% for course in courses %}
+        <div>
+            <h3>{{ course.course_name }}</h3>
+            <img src="{{ course.image_url }}" alt="Course image">
+            <p>{{ course.description }}</p>
+        </div>
+{% endfor %}
+
+    <h2>Posts</h2>
+{% for post in posts %}
+        <div>
+            <h3>{{ post.post_title }}</h3>
+            <p>{{ post.timestamp }}</p>
+        </div>
+{% endfor %}
+{% endblock %}

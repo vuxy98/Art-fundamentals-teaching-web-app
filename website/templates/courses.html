@@ -1,0 +1,29 @@
+<!--courses and schedules planning here-->
+{% extends "base.html" %}
+{% block content %}
+  <div class="container mt-4">
+    <h1 class="mb-4">Courses</h1>
+    <p>Welcome {{ user.first_name }}!</p>
+
+    {% if courses %}
+      <div class="row">
+        {% for course in courses %}
+          <div class="col-md-4 mb-4">
+            <div class="card h-100">
+              {% if course.image_url %}
+                <img src="{{ course.image_url }}" class="card-img-top" alt="{{ course.course_name }}">
+              {% endif %}
+              <div class="card-body">
+                <h5 class="card-title">{{ course.course_name }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">Month: {{ course.month }}</h6>
+                <p class="card-text">{{ course.description }}</p>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No courses available at the moment.</p>
+    {% endif %}
+  </div>
+{% endblock %}

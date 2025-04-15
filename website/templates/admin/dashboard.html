@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Admin Dashboard</h2>
+<ul>
+  {% for course in courses %}
+    <li>{{ course.course_name }} - {{ course.month }}</li>
+  {% endfor %}
+</ul>
+<h2>Add New Course?</h2>
+<form action="{{ url_for('admin.add_course') }}" method="POST">
+    <input name="course_name" placeholder="Course Title" required>
+    <input name="month" placeholder="Month" required>
+    <input name="order" type="number" placeholder="Order" required>
+    <input name="image_url" placeholder="Thumbnail URL">
+    <textarea name="description" placeholder="Description"></textarea>
+    <button type="submit">Add Course</button>
+</form>
+{% endblock %}
