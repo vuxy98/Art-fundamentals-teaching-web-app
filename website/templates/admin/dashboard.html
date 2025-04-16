@@ -16,11 +16,13 @@
     <button type="submit">Add Course</button>
 </form>
 {% for course in courses %}
-  <div class="course">
+  <div class="course card p-3 mb-3">
     <h3>{{ course.course_name }}</h3>
+    <a href="{{ url_for('admin.edit_course', course_id=course.id) }}" class="btn btn-primary">Edit</a>
     <button onclick="deleteCourse({{ course.id }})" class="btn btn-danger">Delete</button>
   </div>
 {% endfor %}
+
 
 <script>
   function deleteCourse(courseId) {

@@ -50,3 +50,23 @@ def delete_course():
         db.session.commit()
         flash("Course deleted!", category="success")
     return jsonify({})
+
+@admin.route('/edit-course/<int:course_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_course(course_id):
+    course = Course.query.get_or_404(course_id)
+
+    if request.method == 'POST':
+        course.course_name = request.form['course_name']
+        course.description = request.form['description']
+        course.month = request.form['month']
+        course.is_locked = 'is_locked' in request.form
+        course.image_url = request.form['image_url']
+        course.order = request.form['order']
+
+        db.session.commit()
+        flash('Course updated successfully!', category='success')
+        return redirect(url_for('admin.dashboard'))
+
+    return render_template('admin/edit_course.html', user=current_user, course=course)
