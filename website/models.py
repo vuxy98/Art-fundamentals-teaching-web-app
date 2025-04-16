@@ -8,7 +8,8 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(150), unique = True)
     password = db.Column(db.String(150))
     posts = db.relationship('Posts', backref='author', lazy=True) # user's posts
-    first_name = db.Column(db.String(150))
+    username = db.Column(db.String(150), unique=True, nullable=False)  # renamed from first_name
+    user_image = db.Column(db.String(300), nullable=True)  # path to profile image
     is_admin = db.Column(db.Boolean, default=False) # check to see if this is an admin or not
 
 class Course(db.Model):

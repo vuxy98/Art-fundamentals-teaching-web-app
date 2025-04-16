@@ -1,7 +1,9 @@
-from flask import Blueprint, json, jsonify, render_template, redirect, request, flash, url_for, abort
+import os
+from flask import Blueprint,current_app, json, jsonify, render_template, redirect, request, flash, url_for, abort
 from flask_login import login_required, current_user
 from functools import wraps
 from .models import Course, db
+from werkzeug.utils import secure_filename
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -14,28 +16,54 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@admin.route('/') # route to admin dashboard, only accessible through /admin
+@admin.route('/') # route to admin dashboard, only accessible through '/admin'
 @login_required
 @admin_required
 def dashboard():
     courses = Course.query.order_by(Course.order).all()
     return render_template("admin/dashboard.html", user=current_user, courses=courses)
 
-@admin.route('/add-course', methods=['POST']) # admin can add courses here
+@admin.route('admin/add_course', methods=['POST'])
 @login_required
 @admin_required
 def add_course():
-    course = Course(
-        course_name=request.form.get('course_name'),
-        description=request.form.get('description'),
-        month=request.form.get('month'),
-        order=int(request.form.get('order')),
-        image_url=request.form.get('image_url'),
-        is_locked=False
+    course_name = request.form.get('course_name')
+    month = request.form.get('month')
+    order = request.form.get('order')
+    description = request.form.get('description')
+    
+    # Check if image was uploaded
+    if 'image_file' in request.files:
+        image_file = request.files['image_file']
+        
+        # Check if the file has a name (was actually uploaded)
+        if image_file.filename != '':
+            filename = secure_filename(image_file.filename)
+            # Create the upload path
+            upload_folder = os.path.join(current_app.static_folder, 'uploads', 'course_thumbnails')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            # Save the file
+            file_path = os.path.join(upload_folder, filename)
+            image_file.save(file_path)
+            
+            # Store the URL for the database (relative path from static folder)
+            image_url = f'/static/uploads/course_thumbnails/{filename}'
+        else:
+            image_url = None
+    else:
+        image_url = None
+
+    new_course = Course(
+        course_name=course_name,
+        month=month,
+        order=int(order),
+        description=description,
+        image_url=image_url
     )
-    db.session.add(course)
+    db.session.add(new_course)
     db.session.commit()
-    flash("Course added successfully!", category="success")
+    flash('Course added successfully!', 'success')
     return redirect(url_for('admin.dashboard'))
 
 @admin.route('/delete-course', methods=['POST'])
@@ -62,8 +90,18 @@ def edit_course(course_id):
         course.description = request.form['description']
         course.month = request.form['month']
         course.is_locked = 'is_locked' in request.form
-        course.image_url = request.form['image_url']
         course.order = request.form['order']
+        
+        # Handle image upload
+        if 'image_file' in request.files:
+            image_file = request.files['image_file']
+            if image_file.filename != '':
+                filename = secure_filename(image_file.filename)
+                upload_folder = os.path.join(current_app.static_folder, 'uploads', 'course_thumbnails')
+                os.makedirs(upload_folder, exist_ok=True)
+                file_path = os.path.join(upload_folder, filename)
+                image_file.save(file_path)
+                course.image_url = f'/static/uploads/course_thumbnails/{filename}'
 
         db.session.commit()
         flash('Course updated successfully!', category='success')

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Edit Profile</h2>
+  <form method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label for="user_image" class="form-label">Change Profile Picture</label><br>
+      {% if user.user_image %}
+        <img src="{{ user.user_image }}" class="rounded-circle mb-2" width="80" height="80"><br>
+      {% endif %}
+      <input class="form-control" type="file" name="user_image" accept="image/*">
+    </div>
+    <button type="submit" class="btn btn-primary">Update</button>
+  </form>
+</div>
+{% endblock %}

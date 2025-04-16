@@ -1,4 +1,4 @@
-#authentication stuffs
+#authentication stuffs (login, logout, register)
 from flask import Blueprint, render_template, request,flash,redirect, url_for
 from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -37,7 +37,7 @@ def logout():
 def signup():
     if request.method == 'POST':
         email = request.form.get('email')
-        first_name = request.form.get('firstName')
+        username = request.form.get('userName')
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
 
@@ -46,7 +46,7 @@ def signup():
             flash('Email already registered!', category='error')
         elif len(email) < 4:
             flash('Your email must be longer than 4 characters', category='error')
-        elif len(first_name) < 2:
+        elif len(username) < 2:
             flash('Your first name must be longer than 1 characters', category='error')
         elif password1 != password2:
             flash('Passwords don\'t match', category='error' )
@@ -54,7 +54,8 @@ def signup():
             flash('Password must be longer than 6 characters', category='error')
             
         else:
-           new_user = User(email=email, first_name=first_name, password=generate_password_hash(password1, method='pbkdf2:sha256'))
+           new_user = User(email=email, username=username, password=generate_password_hash(password1, method='pbkdf2:sha256'))
+           user_image='/static/default_user.png'
            db.session.add(new_user)
            db.session.commit()
            flash('You have been signed up!', category='success')

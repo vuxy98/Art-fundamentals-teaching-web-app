@@ -29,13 +29,12 @@
             {% if user.is_authenticated %}
             <a class="nav-item nav-link" id="logout" href="/logout">Log out</a>  
             <a class="nav-item nav-link" id="main" href="/main">Main Page</a>    
-            <a class="nav-item nav-link" id="courses" href="main/courses">Courses</a> 
-            {% elif user.is_admin %}
-            <a class="nav-item nav-link" id="logout" href="/logout">Log out</a>  
-            <a class="nav-item nav-link" id="main" href="/main">Main Page</a>    
-            <a class="nav-item nav-link" id="courses" href="main/courses">Courses</a> 
-            <a class="nav-item nav-link" id="admin" href="/admin">Admin Dashboard</a>  
-            {% else %}
+            <a class="nav-item nav-link" id="courses" href="/main/courses">Courses</a> 
+            <a class="nav-item nav-link" id="edit_profile" href="/profile/edit">Profile</a> 
+              {% if user.is_admin %}
+              <a class="nav-item nav-link" href="/admin">Admin Dashboard</a>
+              {% endif %}
+            {% else %}  
             <a class="nav-item nav-link" id="home" href="/">Home</a>
             <a class="nav-item nav-link" id="login" href="/login">Login</a>
             <a class="nav-item nav-link" id="register" href="/register">Register</a>
