@@ -15,4 +15,26 @@
     <textarea name="description" placeholder="Description"></textarea>
     <button type="submit">Add Course</button>
 </form>
+{% for course in courses %}
+  <div class="course">
+    <h3>{{ course.course_name }}</h3>
+    <button onclick="deleteCourse({{ course.id }})" class="btn btn-danger">Delete</button>
+  </div>
+{% endfor %}
+
+<script>
+  function deleteCourse(courseId) {
+      fetch("/admin/delete-course", {
+          method: "POST",
+          body: JSON.stringify({ courseId: courseId }),
+          headers: {
+              "Content-Type": "application/json"
+          }
+      }).then((_res) => {
+          window.location.href = "/admin";
+      });
+  }
+</script>
+  
+
 {% endblock %}

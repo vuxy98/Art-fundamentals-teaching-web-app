@@ -3,5 +3,11 @@
 {% block title %}Main{% endblock %}
 
 {% block content %}
-<h1>you are now a certified user</h1>
+<h2>Posts</h2>
+{% for post in posts %}
+        <div>
+            <h3>{{ post.post_title }}</h3>
+            <p>{{ post.timestamp }}</p>
+        </div>
+{% endfor %}
 {% endblock %}

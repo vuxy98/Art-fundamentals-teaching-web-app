@@ -1,5 +1,7 @@
 <!-- Home page, accessible by guests -->
 {% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
 {% block content %}
     <h2>Courses</h2>
         {% for course in courses %}

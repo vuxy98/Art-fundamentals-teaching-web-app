@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, request, flash, url_for, abort
+from flask import Blueprint, json, jsonify, render_template, redirect, request, flash, url_for, abort
 from flask_login import login_required, current_user
 from functools import wraps
 from .models import Course, db
@@ -37,3 +37,16 @@ def add_course():
     db.session.commit()
     flash("Course added successfully!", category="success")
     return redirect(url_for('admin.dashboard'))
+
+@admin.route('/delete-course', methods=['POST'])
+@login_required
+@admin_required
+def delete_course():
+    data = json.loads(request.data)
+    course_id = data['courseId']
+    course = Course.query.get(course_id)
+    if course:
+        db.session.delete(course)
+        db.session.commit()
+        flash("Course deleted!", category="success")
+    return jsonify({})
