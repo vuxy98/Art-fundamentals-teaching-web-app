@@ -2,6 +2,8 @@ from website import create_app
 from website.models import db, User
 from werkzeug.security import generate_password_hash
 
+#admin user is created here
+
 app = create_app()
 with app.app_context():
     existing = User.query.filter_by(email="admin@mail.com").first()

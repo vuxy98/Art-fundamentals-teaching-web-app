@@ -1,5 +1,5 @@
 #user's view pages
-from flask import Blueprint,render_template, flash, request,jsonify
+from flask import Blueprint, redirect, url_for,render_template, flash, request,jsonify
 from flask_login import login_required, current_user
 from .models import db, Course, Posts
 import json
@@ -17,7 +17,8 @@ def landing():
 @views.route('/main')
 @login_required
 def main():
-    return render_template("main.html", user=current_user)
+    posts = Posts.query.order_by(Posts.timestamp.desc()).all()
+    return render_template('main.html', posts=posts, user=current_user)
 
 @views.route('/main/courses')
 @login_required
@@ -25,10 +26,6 @@ def main_courses():
     courses = Course.query.order_by(Course.order).all()  # fetch all courses in order
     return render_template("courses.html", user=current_user, courses=courses)
 
-@views.route('/main/stream')#guests should be able to see this, but can't interact unless they are logged in
-@login_required
-def main_mainstream():
-    return render_template("mainstream.html", user=current_user)
 
 @views.route('/main/problems')#problems forum
 @login_required
@@ -46,3 +43,30 @@ def main_tools():
 def course_detail(course_id):
     course = Course.query.get_or_404(course_id)
     return render_template('course_detail.html', user=current_user, course=course)
+
+# users can create them posts here, as long as they are logged in ofc
+@views.route('/main/create-post', methods=['GET', 'POST'])
+@login_required
+def create_post():
+    if request.method == 'POST':
+        title = request.form.get('post_title')
+        content = request.form.get('content')
+        image_url = request.form.get('image_url')
+        tags = request.form.get('tags')
+        # check for eligible post
+        if not title or not content:
+            flash('Post must have a title and content.', category='error')
+        else:
+            new_post = Posts(
+                post_title=title,
+                content=content,
+                image_url=image_url,
+                tags=tags,
+                user_id=current_user.id
+            )
+            db.session.add(new_post)
+            db.session.commit()
+            flash('Post created!', category='success')
+            return redirect(url_for('views.main'))
+
+    return render_template("create_post.html", user=current_user)

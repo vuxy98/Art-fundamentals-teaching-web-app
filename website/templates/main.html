@@ -10,4 +10,15 @@
             <p>{{ post.timestamp }}</p>
         </div>
 {% endfor %}
+<h3>Or create your own posts!</h3>
+<a href="{{ url_for('views.create_post') }}" class="btn btn-primary">+ Create Post</a>
 {% endblock %}
+
+<style>
+    .btn-primary:hover {
+      background-color: #0056b3;
+      border-color: #0056b3;
+      transform: scale(1.05);
+      transition: all 0.2s ease-in-out;
+    }
+</style>
