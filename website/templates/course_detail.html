@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ course.course_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ course.course_name }}</h1>
+    <p><strong>Month:</strong> {{ course.month }}</p>
+    <img src="{{ course.image_url }}" class="img-fluid mb-3" alt="{{ course.course_name }}">
+    <p>{{ course.description }}</p>
+    <!-- You can add course lessons/materials below -->
+</div>
+{% endblock %}

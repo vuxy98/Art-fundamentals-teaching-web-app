@@ -41,3 +41,8 @@ def main_problems():
 def main_tools():
     return render_template("tools.html", user=current_user)
 
+@views.route('/main/courses/<int:course_id>')
+@login_required
+def course_detail(course_id):
+    course = Course.query.get_or_404(course_id)
+    return render_template('course_detail.html', user=current_user, course=course)

@@ -6,10 +6,11 @@
     <p>Welcome {{ user.first_name }}!</p>
 
     {% if courses %}
-      <div class="row">
-        {% for course in courses %}
-          <div class="col-md-4 mb-4">
-            <div class="card h-100">
+    <div class="row">
+      {% for course in courses %}
+        <div class="col-md-4 mb-4">
+          <a href="{{ url_for('views.course_detail', course_id=course.id) }}" class="course-link">
+            <div class="card h-100 course-card">
               {% if course.image_url %}
                 <img src="{{ course.image_url }}" class="card-img-top" alt="{{ course.course_name }}">
               {% endif %}
@@ -19,11 +20,28 @@
                 <p class="card-text">{{ course.description }}</p>
               </div>
             </div>
-          </div>
-        {% endfor %}
-      </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
     {% else %}
       <p>No courses available at the moment.</p>
     {% endif %}
   </div>
 {% endblock %}
+
+<style>
+  .course-link {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .course-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  }
+</style>
