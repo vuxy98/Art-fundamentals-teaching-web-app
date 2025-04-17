@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from functools import wraps
 from .models import Course, db
 from werkzeug.utils import secure_filename
+from .models import Posts
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -32,22 +33,22 @@ def add_course():
     order = request.form.get('order')
     description = request.form.get('description')
     
-    # Check if image was uploaded
+    # check if image was uploaded
     if 'image_file' in request.files:
         image_file = request.files['image_file']
         
-        # Check if the file has a name (was actually uploaded)
+        # check if the file has a name (was actually uploaded)
         if image_file.filename != '':
             filename = secure_filename(image_file.filename)
-            # Create the upload path
+            # create the upload path
             upload_folder = os.path.join(current_app.static_folder, 'uploads', 'course_thumbnails')
             os.makedirs(upload_folder, exist_ok=True)
             
-            # Save the file
+            # save the file
             file_path = os.path.join(upload_folder, filename)
             image_file.save(file_path)
             
-            # Store the URL for the database (relative path from static folder)
+            # store the URL for the database (relative path from static folder)
             image_url = f'/static/uploads/course_thumbnails/{filename}'
         else:
             image_url = None
@@ -65,7 +66,7 @@ def add_course():
     db.session.commit()
     flash('Course added successfully!', 'success')
     return redirect(url_for('admin.dashboard'))
-
+# deleting course will redirect you here
 @admin.route('/delete-course', methods=['POST'])
 @login_required
 @admin_required
@@ -78,7 +79,7 @@ def delete_course():
         db.session.commit()
         flash("Course deleted!", category="success")
     return jsonify({})
-
+# editing course
 @admin.route('/edit-course/<int:course_id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -92,7 +93,7 @@ def edit_course(course_id):
         course.is_locked = 'is_locked' in request.form
         course.order = request.form['order']
         
-        # Handle image upload
+        # handle image upload
         if 'image_file' in request.files:
             image_file = request.files['image_file']
             if image_file.filename != '':
@@ -108,3 +109,34 @@ def edit_course(course_id):
         return redirect(url_for('admin.dashboard'))
 
     return render_template('admin/edit_course.html', user=current_user, course=course)
+
+# admin will be moderating user posts before they are shown
+@admin.route('/moderate_posts')
+@login_required
+def moderate_posts():
+    if not current_user.is_admin:
+        abort(403)
+    pending_posts = Posts.query.filter_by(is_approved=False).all()
+    return render_template("moderate_posts.html", posts=pending_posts)
+
+@admin.route('/admin/approve_post/<int:post_id>')
+@login_required
+def approve_post(post_id):
+    if not current_user.is_admin:
+        abort(403)
+    post = Posts.query.get_or_404(post_id)
+    post.is_approved = True
+    db.session.commit()
+    flash('Post approved!', 'success')
+    return redirect(url_for('admin.moderate_posts'))
+
+@admin.route('/admin/delete_post/<int:post_id>', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    if not current_user.is_admin:
+        abort(403)
+    post = Posts.query.get_or_404(post_id)
+    db.session.delete(post)
+    db.session.commit()
+    flash('Post deleted.', 'danger')
+    return redirect(url_for('admin.moderate_posts'))

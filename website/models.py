@@ -32,3 +32,4 @@ class Posts(db.Model):
     likes = db.Column(db.Integer, default=0) # likes/upvotes, for sorting posts
     tags = db.Column(db.String(100))  # tags for searching/tagging
     is_locked = db.Column(db.Boolean, default=True)
+    is_approved = db.Column(db.Boolean, default=False) # check for a post to see if its approved or not

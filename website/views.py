@@ -19,8 +19,9 @@ def landing():
 @views.route('/main')
 @login_required
 def main():
-    posts = Posts.query.order_by(Posts.timestamp.desc()).all()
-    return render_template('main.html', posts=posts, user=current_user)
+    approved_posts = Posts.query.filter_by(is_approved=True).order_by(Posts.timestamp.desc()).all()
+    return render_template("main.html", posts=approved_posts)
+
 # courses route
 @views.route('/main/courses')
 @login_required
@@ -70,6 +71,7 @@ def create_post():
             tags=tags,
             image_url=image_url,
             author=current_user,
+            is_approved=False
         )
         db.session.add(post)
         db.session.commit()
