@@ -2,7 +2,7 @@
 import os
 from flask import Blueprint, redirect, url_for,render_template, flash, request,jsonify,current_app
 from flask_login import login_required, current_user
-from .models import db, Course, Posts
+from .models import db, Course, Posts, Tag
 import json
 from werkzeug.utils import secure_filename
 
@@ -54,8 +54,19 @@ def create_post():
     if request.method == 'POST':
         title = request.form.get('post_title')
         content = request.form.get('content')
-        tags = request.form.get('tags')
+        raw_tags = request.form.get('tags')
         image_file = request.files.get('image_file')
+
+        tags_list = []
+        if raw_tags:
+            tag_names = raw_tags.strip().split()
+            for name in tag_names:
+                cleaned_name = name.strip("#").lower()
+                tag = Tag.query.filter_by(name=cleaned_name).first()
+                if not tag:
+                    tag = Tag(name=cleaned_name)
+                    db.session.add(tag)
+                tags_list.append(tag)
 
         image_url = None
         if image_file:
@@ -68,14 +79,14 @@ def create_post():
         post = Posts(
             post_title=title,
             content=content,
-            tags=tags,
+            tags=tags_list,  
             image_url=image_url,
             author=current_user,
             is_approved=False
         )
         db.session.add(post)
         db.session.commit()
-        flash('Post created!', category='success')
+        flash('Post created! Your post will be moderated by admin before it is here!', category='success')
         return redirect(url_for('views.main'))
 
     return render_template("create_post.html", user=current_user)

@@ -21,6 +21,11 @@ class Course(db.Model):
     image_url = db.Column(db.String(200))  # thumbnail for the course
     order = db.Column(db.Integer, unique=True)  # sort by month or course order
 
+#association table for tags and posts
+post_tags = db.Table('post_tags',
+    db.Column('post_id', db.Integer, db.ForeignKey('posts.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True)
+)
 
 class Posts(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -30,6 +35,13 @@ class Posts(db.Model):
     image_url = db.Column(db.String(300))  # link to the artwork (if it's an image post)
     content = db.Column(db.Text)  # description/caption
     likes = db.Column(db.Integer, default=0) # likes/upvotes, for sorting posts
-    tags = db.Column(db.String(100))  # tags for searching/tagging
+    tags = db.relationship('Tag', secondary=post_tags, backref='posts')
     is_locked = db.Column(db.Boolean, default=True)
     is_approved = db.Column(db.Boolean, default=False) # check for a post to see if its approved or not
+# tags of posts will be seperated to prevent issues like onlly 1 tag for each post
+class Tag(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+
+    def __repr__(self):
+        return f'<Tag {self.name}>'
