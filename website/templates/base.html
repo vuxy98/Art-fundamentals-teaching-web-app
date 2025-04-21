@@ -3,7 +3,7 @@
 <html>
     <head>
         <meta charset = "utf-8">
-        <meta name="viewport" content="width=device-width, initital-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link
         rel="stylesheet"
         href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
@@ -31,6 +31,7 @@
             <a class="nav-item nav-link" id="main" href="/main">Main Page</a>    
             <a class="nav-item nav-link" id="courses" href="/main/courses">Courses</a> 
             <a class="nav-item nav-link" id="edit_profile" href="/profile/edit">Profile</a> 
+            <a class="nav-item nav-link" id="delete_post" href="/delete_post">Delete Post</a>
               {% if user.is_admin %}
               <a class="nav-item nav-link" href="/admin">Admin Dashboard</a>
               <a class="nav-item nav-link" href="/admin/moderate_posts">Post Moderation</a>
@@ -41,6 +42,11 @@
             <a class="nav-item nav-link" id="register" href="/register">Register</a>
             {% endif %}
           </div>
+<!-- search bar -->
+            <form class="form-inline my-2 my-lg-0" action="{{ url_for('views.search') }}" method="GET">
+              <input class="form-control mr-sm-2" type="search" name="tag" placeholder="Search tags..." aria-label="Search">
+              <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Search</button>
+            </form>
         </div>
       </nav>  
 
@@ -96,7 +102,7 @@
       window.location.href = "/";
     });
     }
-  </script>
+  </script>  
   {% endblock %}
     </body>
 </html>

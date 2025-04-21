@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Delete Post{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1 class="my-4">Your Posts</h1>
+
+  {% if posts %}
+    <div class="row">
+      {% for post in posts %}
+        <div class="col-md-12 mb-4">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <div>
+                {% if post.author.user_image %}
+                  <img src="{{ post.author.user_image }}" alt="{{ post.author.username }}" class="avatar" style="width: 30px; height: 30px; border-radius: 50%;">
+                {% else %}
+                  <i class="fas fa-user-circle"></i>
+                {% endif %}
+                <span>{{ post.author.username }}</span>
+              </div>
+              <small>{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+            </div>
+            
+            <div class="card-body">
+              <h5 class="card-title">{{ post.post_title }}</h5>
+              <p class="card-text">{{ post.content }}</p>
+              
+              {% if post.image_url %}
+                <img src="{{ post.image_url }}" alt="Post image" class="img-fluid mb-3">
+              {% endif %}
+              
+              {% if post.tags %}
+                <div class="mb-2">
+                  <small>Tags:
+                    {% for tag in post.tags %}
+                      <span class="badge bg-secondary">{{ tag.name }}</span>
+                    {% endfor %}
+                  </small>
+                </div>
+              {% endif %}
+              
+              <div class="d-flex justify-content-between align-items-center">
+                <small>Upvotes: {{ post.upvotes|length }}</small>
+                <form action="{{ url_for('views.delete_post', post_id=post.id) }}" method="POST">
+                  <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this post?')">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info">
+      You have not posted anything yet.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

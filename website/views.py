@@ -2,7 +2,7 @@
 import os
 from flask import Blueprint, redirect, url_for,render_template, flash, request,jsonify,current_app
 from flask_login import login_required, current_user
-from .models import db, Course, Posts, Tag
+from .models import db, Course, Posts, Tag, Upvote, post_tags
 import json
 from werkzeug.utils import secure_filename
 
@@ -110,3 +110,75 @@ def edit_profile():
             return redirect(url_for('views.edit_profile'))
 
     return render_template("edit_profile.html", user=current_user)
+
+@views.route('/upvote', methods=['POST'])
+@login_required
+def upvote_post():
+    post_id = request.json.get('post_id')  # Accept ID from JSON body
+    post = Posts.query.get_or_404(post_id)
+
+    existing_vote = Upvote.query.filter_by(user_id=current_user.id, post_id=post_id).first()
+    if existing_vote:
+        db.session.delete(existing_vote)
+        db.session.commit()
+        return jsonify({'message': 'Unvoted', 'upvotes': len(post.upvotes)})
+    else:
+        vote = Upvote(user_id=current_user.id, post_id=post_id)
+        db.session.add(vote)
+        db.session.commit()
+        return jsonify({'message': 'Upvoted', 'upvotes': len(post.upvotes)})
+
+@views.route('/search')
+def search():
+    # 1. Get the tag from the query parameter
+    tag_query = request.args.get('tag', '').strip().lower()  # Default is empty string if missing
+
+    # 2. If the tag is empty, return to main with a message
+    if not tag_query:
+        flash("Please enter a tag to search.", category="error")
+        return redirect(url_for('views.main'))
+
+    # 3. Filter posts where the tag exists in the tags field (assuming tags is a comma-separated string)
+    # Note: we use ilike for case-insensitive partial matching
+    matching_posts = Posts.query \
+        .join(post_tags) \
+        .join(Tag) \
+        .filter(Tag.name.ilike(f"%{tag_query}%")) \
+        .all()
+    # 4. Sort posts by:
+    #    - Number of upvotes (descending)
+    #    - Timestamp (descending) as a tiebreaker
+    matching_posts.sort(key=lambda post: (len(post.upvotes), post.timestamp), reverse=True)
+
+    # 5. Render a search results page
+    return render_template("search_results.html", posts=matching_posts, search_tag=tag_query)
+
+@views.route('/delete_post')
+@login_required
+def delete_post_page():
+    # Show only posts by current user
+    user_posts = Posts.query.filter_by(user_id=current_user.id).order_by(Posts.timestamp.desc()).all()
+    return render_template("delete_post.html", posts=user_posts)
+
+# Route to handle actual deletion
+@views.route('/delete_post/<int:post_id>', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = Posts.query.get_or_404(post_id)
+    
+    # Ensure the current user owns the post
+    if post.user_id != current_user.id:
+        flash("You are not authorized to delete this post.", category="error")
+        return redirect(url_for('views.delete_post_page'))
+    
+    # Manually delete upvotes associated with the post before deleting the post
+    upvotes = Upvote.query.filter_by(post_id=post_id).all()
+    for upvote in upvotes:
+        db.session.delete(upvote)
+    
+    # Now delete the post
+    db.session.delete(post)
+    db.session.commit()
+    
+    flash("Post deleted successfully!", category="success")
+    return redirect(url_for('views.delete_post_page'))

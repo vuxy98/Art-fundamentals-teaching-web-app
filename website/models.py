@@ -45,3 +45,16 @@ class Tag(db.Model):
 
     def __repr__(self):
         return f'<Tag {self.name}>'
+    
+class Upvote(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)
+
+    user = db.relationship('User', backref='upvotes')
+    post = db.relationship('Posts', backref='upvotes',  cascade='all, delete')
+
+    #This table tracks each upvote as a combination of a user and a post. The unique constraint ensures that one user can upvote a post only once.
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'post_id', name='unique_user_post_upvote'),
+    )

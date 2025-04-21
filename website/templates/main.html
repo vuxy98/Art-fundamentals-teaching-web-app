@@ -17,6 +17,15 @@
         {% endif %}
         <strong>{{ post.author.username }}</strong>
       </div>
+      <!-- tags display -->
+      {% if post.tags %}
+      <p class="tags mb-3">
+        <strong>Tags:</strong>
+          {% for tag in post.tags %}
+            <span class="badge badge-info">{{ tag.name }}</span>
+          {% endfor %}
+      </p>
+      {% endif %}
 
       <!-- post content -->
       <h3>{{ post.post_title }}</h3>
@@ -26,14 +35,45 @@
       {% if post.image_url %}
         <img src="{{ post.image_url }}" alt="Post Image" class="img-fluid mb-2" style="max-width: 100%; height: auto;">
       {% endif %}
-
-      {% if post.tags %}
-        <p><strong>Tags:</strong> {{ post.tags }}</p>
-      {% endif %}
+      <!-- upvote button -->
+        <div>
+          <button class="upvote-btn" data-post-id="{{ post.id }}">
+            👍 <span class="upvote-count">{{ post.upvotes|length }}</span>
+          </button>
+        </div>
     </div>
   {% endfor %}
 </div>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll('.upvote-btn').forEach(button => {
+          button.addEventListener('click', () => {
+              const postId = button.getAttribute('data-post-id');
+  
+              fetch('/upvote', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ post_id: postId })
+              })
+              .then(res => res.json())
+              .then(data => {
+                  console.log(data.message);
+                  // Update the count on the page
+                  button.querySelector('.upvote-count').textContent = data.upvotes;
+              })
+              .catch(error => {
+                  console.error('Upvote failed:', error);
+              });
+          });
+      });
+  });
+  </script>
+
 {% endblock %}
+
+
 
 <style>
   .btn-primary:hover {
@@ -50,5 +90,23 @@
 
   .container {
     max-width: 800px;
+  }
+
+  .tags {
+    font-size: 0.9rem;
+    color: #6c757d;
+  }
+
+  .tags .badge {
+    margin-right: 5px;
+  }
+
+  .upvote-btn {
+    font-size: 1.1rem;
+    padding: 5px 10px;
+  }
+
+  .upvote-btn:hover {
+    background-color: #f1f1f1;
   }
 </style>
