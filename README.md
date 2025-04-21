@@ -1,7 +1,7 @@
 # About the project - ArtSimplified:
 A prototype web application designed to help aspiring artists grow by learning the fundametals of art, sharing artwork, joining discussions, asking problems, and exploring course materials for free, also users could create their own schedule that suits best with their time, or follow a pre-made one. Developed as an internship project.
 ## Author:
-- Intern Developer: Nguyễn Xuân Hồng Vũ
+- Intern Developer: Nguyễn Xuân Hồng Vũ - 22BI13479
 - Project Supervisor: Huỳnh Vinh Nam
 
 ## Features:
