@@ -35,11 +35,14 @@
       {% if post.image_url %}
         <img src="{{ post.image_url }}" alt="Post Image" class="img-fluid mb-2" style="max-width: 100%; height: auto;">
       {% endif %}
-      <!-- upvote button -->
+      <!-- upvote button and comments -->
         <div>
           <button class="upvote-btn" data-post-id="{{ post.id }}">
             👍 <span class="upvote-count">{{ post.upvotes|length }}</span>
           </button>
+          <a href="{{ url_for('views.post_detail', post_id=post.id) }}" class="btn btn-outline-secondary">
+            💬 Comments ({{ post.comments|length }})
+          </a>
         </div>
     </div>
   {% endfor %}

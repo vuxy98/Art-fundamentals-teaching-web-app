@@ -1,7 +1,9 @@
 #database models
+from datetime import datetime
 from website import db
 from flask_login import UserMixin
 from sqlalchemy.sql import func
+
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key = True)
@@ -38,6 +40,7 @@ class Posts(db.Model):
     tags = db.relationship('Tag', secondary=post_tags, backref='posts')
     is_locked = db.Column(db.Boolean, default=True)
     is_approved = db.Column(db.Boolean, default=False) # check for a post to see if its approved or not
+    comments = db.relationship('Comment', backref='post', lazy=True)  # link comments to the post
 # tags of posts will be seperated to prevent issues like onlly 1 tag for each post
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -52,9 +55,18 @@ class Upvote(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)
 
     user = db.relationship('User', backref='upvotes')
-    post = db.relationship('Posts', backref='upvotes',  cascade='all, delete')
+    post = db.relationship('Posts', backref='upvotes')
 
     #This table tracks each upvote as a combination of a user and a post. The unique constraint ensures that one user can upvote a post only once.
     __table_args__ = (
         db.UniqueConstraint('user_id', 'post_id', name='unique_user_post_upvote'),
     )
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)  # comment text
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # when the comment was made   
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # who made the comment
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)  # which post the comment is for
+# display user info on comments
+    user = db.relationship('User', backref='comments')

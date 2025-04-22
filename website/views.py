@@ -2,9 +2,11 @@
 import os
 from flask import Blueprint, redirect, url_for,render_template, flash, request,jsonify,current_app
 from flask_login import login_required, current_user
-from .models import db, Course, Posts, Tag, Upvote, post_tags
+from .models import db,Comment, Course, Posts, Tag, Upvote, post_tags
 import json
 from werkzeug.utils import secure_filename
+from sqlalchemy.orm import joinedload
+
 
 views = Blueprint('views', __name__)
 #home page, get n post would be used for later
@@ -19,8 +21,29 @@ def landing():
 @views.route('/main')
 @login_required
 def main():
-    approved_posts = Posts.query.filter_by(is_approved=True).order_by(Posts.timestamp.desc()).all()
+    approved_posts = Posts.query.options(joinedload(Posts.comments), joinedload(Posts.upvotes)).filter_by(is_approved=True).all()
+    approved_posts.sort(key=lambda post: (len(post.upvotes), post.timestamp), reverse=True)
     return render_template("main.html", posts=approved_posts)
+#comments for posts
+@views.route('/post/<int:post_id>', methods=['GET', 'POST'])
+@login_required
+def post_detail(post_id):
+    post = Posts.query.get_or_404(post_id)
+    comments = Comment.query.filter_by(post_id=post_id).order_by(Comment.timestamp.desc()).all()
+
+    if request.method == 'POST':
+        content = request.form.get('comment_content', '').strip()
+
+        if not content:
+            flash("Comment cannot be empty!", category="error")
+        else:
+            comment = Comment(content=content, user_id=current_user.id, post_id=post.id)
+            db.session.add(comment)
+            db.session.commit()
+            flash("Comment added successfully!", category="success")
+            return redirect(url_for('views.post_detail', post_id=post.id))  # refresh to avoid re-POSTing on refresh
+
+    return render_template('post_detail.html', post=post, comments=comments, user=current_user)
 
 # courses route
 @views.route('/main/courses')
@@ -121,6 +144,7 @@ def upvote_post():
     if existing_vote:
         db.session.delete(existing_vote)
         db.session.commit()
+        db.session.refresh(post)
         return jsonify({'message': 'Unvoted', 'upvotes': len(post.upvotes)})
     else:
         vote = Upvote(user_id=current_user.id, post_id=post_id)
@@ -171,12 +195,12 @@ def delete_post(post_id):
         flash("You are not authorized to delete this post.", category="error")
         return redirect(url_for('views.delete_post_page'))
     
-    # Manually delete upvotes associated with the post before deleting the post
+    # delete upvotes associated with the post before deleting the post
     upvotes = Upvote.query.filter_by(post_id=post_id).all()
     for upvote in upvotes:
         db.session.delete(upvote)
     
-    # Now delete the post
+    # delete the post
     db.session.delete(post)
     db.session.commit()
     

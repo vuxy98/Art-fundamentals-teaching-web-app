@@ -1,0 +1,35 @@
+<!--showing a post with its comments here, to void post with too many comments flood the page-->
+{% extends "base.html" %}
+{% block title %}Post Details{% endblock %}
+{% block content %}
+<!-- Display Post -->
+<div class="card mb-4">
+    <div class="card-body">
+      <h4 class="card-title">{{ post.post_title }}</h4>
+      <p class="card-text">{{ post.content }}</p>
+      {% if post.image_url %}
+        <img src="{{ post.image_url }}" class="img-fluid">
+      {% endif %}
+      <p class="text-muted">Posted by {{ post.author.username }} | {{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+      <p><strong>{{ comments|length }} Comment(s)</strong></p>
+    </div>
+  </div>
+  
+  <!-- Comment Form -->
+  <form method="POST" class="mb-3">
+    <div class="form-group">
+      <textarea name="comment_content" class="form-control" rows="3" placeholder="Write a comment..."></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Post Comment</button>
+  </form>
+  
+  <!-- Display Comments -->
+  {% for comment in comments %}
+    <div class="card mb-2">
+      <div class="card-body">
+        <p class="card-text">{{ comment.content }}</p>
+        <p class="text-muted small">By {{ comment.user.username }} at {{ comment.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+      </div>
+    </div>
+  {% endfor %}
+{% endblock %}
