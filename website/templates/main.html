@@ -5,6 +5,13 @@
 <h2>Posts</h2>
 <div class="container">
   <a href="{{ url_for('views.create_post') }}" class="btn btn-primary" >+ Create Your Post!</a>
+  <div class="col-md-6 text-right">
+    <strong>Sort by:</strong>
+    <a href="{{ url_for('views.main', sort_by='recent') }}" 
+       class="{{ 'font-weight-bold' if sort_by == 'recent' else '' }}">Recent</a> | 
+    <a href="{{ url_for('views.main', sort_by='upvotes') }}"
+       class="{{ 'font-weight-bold' if sort_by == 'upvotes' else '' }}">Most Upvoted</a>
+  </div>
   {% for post in posts %}
     <div class="card mb-4 p-3 shadow-sm">
       

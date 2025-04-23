@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Ask a Question{% endblock %}
+{% block content %}
+<h2>Ask a Question</h2>
+
+<form method="POST" enctype="multipart/form-data">
+  <input type="text" name="post_title" placeholder="Question Title" required><br>
+  <textarea name="content" placeholder="Describe your problem..." required></textarea><br>
+  <input type="file" name="image_file" accept="image/*"><br>
+  <input type="text" name="tags" placeholder="Tags (e.g., perspective lighting anatomy)"><br>
+  <button type="submit">Submit Question</button>
+</form>
+{% endblock %}

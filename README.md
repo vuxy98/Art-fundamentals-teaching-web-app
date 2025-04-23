@@ -30,8 +30,8 @@ A prototype web application designed to help aspiring artists grow by learning t
 - Courses are added only by admin
 - Admin dashboard for managing course content and images
 
-### Comments (Coming Soon)
-- Each post will support a comment section with threaded replies
+### Comments 
+- Each post will support a comment section 
 
 ## Techs used
 - **Backend**: Python, Flask, Flask-Login, Flask-Migrate, SQLAlchemy

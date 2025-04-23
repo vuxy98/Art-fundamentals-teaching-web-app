@@ -1,7 +1,49 @@
 <!--problems forum, containing users posted problems-->
 {% extends "base.html" %}
 {% block title %}Problems Forum{% endblock %}
-
 {% block content %}
-<h1>Ask your problems here</h1>
+<h2>Problem Forum</h2>
+<p>Ask questions and help other artists solve their problems.</p>
+
+<div class="row mb-3">
+  <div class="col-md-6">
+    <a href="{{ url_for('views.create_problem') }}" class="btn btn-primary">Ask a Question</a>
+  </div>
+  <div class="col-md-6 text-right">
+    <strong>Sort by:</strong>
+    <a href="{{ url_for('views.problems', sort_by='recent') }}" 
+       class="{{ 'font-weight-bold' if sort_by == 'recent' else '' }}">Recent</a> | 
+    <a href="{{ url_for('views.problems', sort_by='upvotes') }}"
+       class="{{ 'font-weight-bold' if sort_by == 'upvotes' else '' }}">Most Upvoted</a>
+  </div>
+</div>
+
+<div class="problems-list">
+  {% for problem in problems %}
+    <div class="card mb-2" style="max-height: 150px; overflow: hidden;">
+      <div class="card-body p-3">
+        <h5>
+          <a href="{{ url_for('views.problem_detail', problem_id=problem.id) }}">{{ problem.title }}</a>
+        </h5>
+        <div class="d-flex justify-content-between">
+          <div>
+            {% for tag in problem.tags %}
+              <span class="badge badge-secondary">#{{ tag.name }}</span>
+            {% endfor %}
+          </div>
+          <small class="text-muted">
+            <i class="fa fa-thumbs-up"></i> {{ problem.upvotes.count() }}
+            <i class="fa fa-comment ml-2"></i> {{ problem.comments.count() }}
+            <span class="ml-2">{{ problem.timestamp.strftime('%Y-%m-%d') }}</span>
+          </small>
+        </div>
+        <div class="mt-1">
+          <small>Posted by: {{ problem.user.username }}</small>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <p class="text-center">No problems posted yet. Be the first to ask a question!</p>
+  {% endfor %}
+</div>
 {% endblock %}

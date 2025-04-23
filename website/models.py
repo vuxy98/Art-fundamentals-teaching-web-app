@@ -4,7 +4,7 @@ from website import db
 from flask_login import UserMixin
 from sqlalchemy.sql import func
 
-
+#------------------------------------------------------------------------------------------------------------------------
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key = True)
     email = db.Column(db.String(150), unique = True)
@@ -13,7 +13,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(150), unique=True, nullable=False)  # renamed from first_name
     user_image = db.Column(db.String(300), nullable=True)  # path to profile image
     is_admin = db.Column(db.Boolean, default=False) # check to see if this is an admin or not
-
+#------------------------------------------------------------------------------------------------------------------------
 class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     course_name = db.Column(db.String(100), unique=True)
@@ -28,13 +28,34 @@ post_tags = db.Table('post_tags',
     db.Column('post_id', db.Integer, db.ForeignKey('posts.id'), primary_key=True),
     db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True)
 )
+#------------------------------------------------------------------------------------------------------------------------
+problem_tags = db.Table('problem_tags',
+    db.Column('problem_id', db.Integer, db.ForeignKey('problem.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True)
+)
+
+class Problem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    image_url = db.Column(db.String(300), nullable=True)
+    is_approved = db.Column(db.Boolean, default=False)
+
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref='problems')
+    tags = db.relationship('Tag', secondary=problem_tags, backref='problems')
+
+    upvotes = db.relationship('ProblemUpvote', backref='problem', lazy='dynamic')
+    comments = db.relationship('ProblemComment', backref='problem', lazy='dynamic')
 
 class Posts(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     post_title = db.Column(db.String(150))
     timestamp = db.Column(db.DateTime(timezone=True), default=func.now())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # who posted it
-    image_url = db.Column(db.String(300))  # link to the artwork (if it's an image post)
+    image_url = db.Column(db.String(300))  # the artwork (if it's an image post)
     content = db.Column(db.Text)  # description/caption
     likes = db.Column(db.Integer, default=0) # likes/upvotes, for sorting posts
     tags = db.relationship('Tag', secondary=post_tags, backref='posts')
@@ -48,8 +69,8 @@ class Tag(db.Model):
 
     def __repr__(self):
         return f'<Tag {self.name}>'
-    
-class Upvote(db.Model):
+#------------------------------------------------------------------------------------------------------------------------    
+class Upvote(db.Model): # posts upvote
     id = db.Column(db.Integer, primary_key = True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)
@@ -62,11 +83,33 @@ class Upvote(db.Model):
         db.UniqueConstraint('user_id', 'post_id', name='unique_user_post_upvote'),
     )
 
-class Comment(db.Model):
+class ProblemUpvote(db.Model): #problems upvote
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    problem_id = db.Column(db.Integer, db.ForeignKey('problem.id'), nullable=False)
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'problem_id', name='unique_user_problem_upvote'),)
+#------------------------------------------------------------------------------------------------------------------------
+class Comment(db.Model): #posts comments
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)  # comment text
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # when the comment was made   
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # who made the comment
-    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)  # which post the comment is for
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # when the comment was made  
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False) 
+    
 # display user info on comments
     user = db.relationship('User', backref='comments')
+
+class ProblemComment(db.Model): #problems comment
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    problem_id = db.Column(db.Integer, db.ForeignKey('problem.id'), nullable=False)
+
+    user = db.relationship('User', backref='problem_comments')
+
+#------------------------------------------------------------------------------------------------------------------------
+

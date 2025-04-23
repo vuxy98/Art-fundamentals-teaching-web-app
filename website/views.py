@@ -2,7 +2,7 @@
 import os
 from flask import Blueprint, redirect, url_for,render_template, flash, request,jsonify,current_app
 from flask_login import login_required, current_user
-from .models import db,Comment, Course, Posts, Tag, Upvote, post_tags
+from .models import db,Comment, Course, Posts, Tag, Upvote, Problem, ProblemComment, ProblemUpvote, post_tags
 import json
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import joinedload
@@ -21,9 +21,21 @@ def landing():
 @views.route('/main')
 @login_required
 def main():
-    approved_posts = Posts.query.options(joinedload(Posts.comments), joinedload(Posts.upvotes)).filter_by(is_approved=True).all()
-    approved_posts.sort(key=lambda post: (len(post.upvotes), post.timestamp), reverse=True)
-    return render_template("main.html", posts=approved_posts)
+    sort_by = request.args.get('sort_by', 'upvotes')  # Default sort by upvotes
+    
+    # Always filter by approved posts and use joinedload for efficiency
+    approved_posts = Posts.query.options(
+        joinedload(Posts.comments), 
+        joinedload(Posts.upvotes)
+    ).filter_by(is_approved=True).all()
+    
+    # Sort based on user preference
+    if sort_by == 'recent':
+        approved_posts.sort(key=lambda post: post.timestamp, reverse=True)
+    else:  # Default to upvotes
+        approved_posts.sort(key=lambda post: (len(post.upvotes), post.timestamp), reverse=True)
+    
+    return render_template("main.html", posts=approved_posts, sort_by=sort_by)
 #comments for posts
 @views.route('/post/<int:post_id>', methods=['GET', 'POST'])
 @login_required
@@ -41,7 +53,7 @@ def post_detail(post_id):
             db.session.add(comment)
             db.session.commit()
             flash("Comment added successfully!", category="success")
-            return redirect(url_for('views.post_detail', post_id=post.id))  # refresh to avoid re-POSTing on refresh
+            return redirect(url_for('views.main', post_id=post.id))  # refresh to avoid re-POSTing on refresh
 
     return render_template('post_detail.html', post=post, comments=comments, user=current_user)
 
@@ -55,14 +67,97 @@ def main_courses():
 
 @views.route('/main/problems')# problems forum
 @login_required
-def main_problems():
-    return render_template("problems.html", user=current_user)
+def problems():
+    sort_by = request.args.get('sort_by', 'recent')
+    if sort_by == 'upvotes':
+        problems = Problem.query.all()
+        problems.sort(key=lambda p: len(p.upvotes), reverse=True)
+    else:
+        problems = Problem.query.order_by(Problem.timestamp.desc()).all()
+    return render_template("problems.html", problems=problems, sort_by=sort_by)
 
-
-@views.route('/main/tools')# tools like white board, 3d custom pose, etc
+@views.route('/problem/<int:problem_id>', methods=['GET', 'POST'])
 @login_required
-def main_tools():
-    return render_template("tools.html", user=current_user)
+def problem_detail(problem_id):
+    problem = Problem.query.get_or_404(problem_id)
+    comments = ProblemComment.query.filter_by(problem_id=problem_id).order_by(ProblemComment.timestamp.desc()).all()
+
+    if request.method == 'POST':
+        content = request.form.get('comment_content', '').strip()
+
+        if not content:
+            flash("Comment cannot be empty!", category="error")
+        else:
+            comment = ProblemComment(content=content, user_id=current_user.id, problem_id=problem.id)
+            db.session.add(comment)
+            db.session.commit()
+            flash("Comment added successfully!", category="success")
+            return redirect(url_for('views.problem_detail', problem_id=problem.id))
+
+    return render_template('problem_detail.html', problem=problem, comments=comments, user=current_user)
+
+# Fix for create_problem route
+@views.route('/main/create_problem', methods=['GET', 'POST'])
+@login_required
+def create_problem():
+    if request.method == "POST":
+        title = request.form.get('post_title')
+        content = request.form.get('content')
+        raw_tags = request.form.get('tags')
+        image_file = request.files.get('image_file')
+
+        tags_list = []
+        if raw_tags:
+            tag_names = raw_tags.strip().split()
+            for name in tag_names:
+                cleaned_name = name.strip("#").lower()
+                tag = Tag.query.filter_by(name=cleaned_name).first()
+                if not tag:
+                    tag = Tag(name=cleaned_name)
+                    db.session.add(tag)
+                tags_list.append(tag)
+
+        image_url = None
+        if image_file:
+            filename = secure_filename(image_file.filename)
+            upload_path = os.path.join(current_app.root_path, 'static/uploads', filename)
+            os.makedirs(os.path.dirname(upload_path), exist_ok=True)
+            image_file.save(upload_path)
+            image_url = f'/static/uploads/{filename}'
+
+        problem = Problem(
+            title=title,
+            description=content,  
+            tags=tags_list,  
+            image_url=image_url,
+            user_id=current_user.id, 
+            is_approved=False
+        )
+        db.session.add(problem)
+        db.session.commit()
+        flash('Question created! Your question will be moderated by admin before it is here!', category='success')
+        return redirect(url_for('views.problems'))
+    
+    return render_template("create_problem.html", user=current_user)  # Added template rendering
+
+# Fix for problem_upvote route
+@views.route('/problem_upvote', methods=['POST'])
+@login_required
+def problem_upvote():
+    problem_id = request.json.get('problem_id')
+    problem = Problem.query.get_or_404(problem_id)
+
+    existing_vote = ProblemUpvote.query.filter_by(user_id=current_user.id, problem_id=problem_id).first()
+    if existing_vote:
+        db.session.delete(existing_vote)
+        db.session.commit()
+        db.session.refresh(problem)
+        return jsonify({'message': 'Unvoted', 'upvotes': problem.upvotes.count()})
+    else:
+        vote = ProblemUpvote(user_id=current_user.id, problem_id=problem_id)
+        db.session.add(vote)
+        db.session.commit()
+        return jsonify({'message': 'Upvoted', 'upvotes': problem.upvotes.count()})
 
 @views.route('/main/courses/<int:course_id>') # showing course details, depending on what the user choose
 @login_required
@@ -195,10 +290,14 @@ def delete_post(post_id):
         flash("You are not authorized to delete this post.", category="error")
         return redirect(url_for('views.delete_post_page'))
     
-    # delete upvotes associated with the post before deleting the post
+    # delete upvotes, comments associated with the post before deleting the post
     upvotes = Upvote.query.filter_by(post_id=post_id).all()
     for upvote in upvotes:
         db.session.delete(upvote)
+
+    comments = Comment.query.filter_by(post_id=post_id).all()
+    for comment in comments:
+        db.session.delete(comment) 
     
     # delete the post
     db.session.delete(post)
