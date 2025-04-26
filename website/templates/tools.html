@@ -1,7 +1,163 @@
-<!--tools and such, man i love 3js-->
 {% extends "base.html" %}
 {% block title %}Tools{% endblock %}
-
 {% block content %}
-<h1>c'est la page des outils</h1>
+<h1 style="text-align:center;">Whiteboard Tool</h1>
+<h5 style="text-align:left;" >Note: Only use this for your praticing purpose, you can check out some free drawing software like MedibangPaint</h5>
+
+<div id="tools" style="margin-bottom: 1rem;">
+    <label for="colorPicker">Brush Color:</label>
+    <input type="color" id="colorPicker" value="#000000">
+  
+    <label for="brushSize">Brush Size:</label>
+    <input type="range" id="brushSize" min="1" max="30" value="5">
+  
+    <button id="eraserBtn">Eraser</button>
+    <button id="undoBtn">Undo</button>
+    <button id="redoBtn">Redo</button>
+    <button id="clearBtn">Clear Canvas</button>
+  </div>
+  
+  <canvas id="whiteboard" width="800" height="500" style="border: 1px solid #000;"></canvas>
+  
+  <script>
+    const canvas = document.getElementById('whiteboard');
+    const ctx = canvas.getContext('2d');
+  
+    let drawing = false;
+    let isErasing = false;
+  
+    // Drawing settings
+    let currentColor = document.getElementById('colorPicker').value;
+    let brushSize = document.getElementById('brushSize').value;
+  
+    // History stacks for undo/redo
+    let undoStack = [];
+    let redoStack = [];
+  
+    // Load saved drawing when page loads
+    loadCanvas();
+  
+    // Start drawing
+    canvas.addEventListener('mousedown', (e) => {
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+  
+      // Save current canvas state before starting new stroke
+      undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+      redoStack = []; // clear redo stack when new action is taken
+    });
+  
+    // Draw as mouse moves
+    canvas.addEventListener('mousemove', (e) => {
+      if (!drawing) return;
+  
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.strokeStyle = isErasing ? "#FFFFFF" : currentColor;
+      ctx.lineWidth = brushSize;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke();
+    });
+  
+    // End drawing
+    canvas.addEventListener('mouseup', () => {
+      drawing = false;
+      ctx.closePath();
+      saveCanvas(); // Save drawing to local storage, will associate this with users accounts later 
+    });
+  
+    // Also stop drawing when mouse leaves the canvas
+    canvas.addEventListener('mouseleave', () => {
+      if (drawing) {
+        drawing = false;
+        ctx.closePath();
+        saveCanvas();
+      }
+    });
+  
+    // Brush color change
+    document.getElementById('colorPicker').addEventListener('change', (e) => {
+      currentColor = e.target.value;
+    });
+  
+    // Brush size change
+    document.getElementById('brushSize').addEventListener('input', (e) => {
+      brushSize = e.target.value;
+    });
+  
+    // Toggle eraser
+    document.getElementById('eraserBtn').addEventListener('click', () => {
+      isErasing = !isErasing;
+      document.getElementById('eraserBtn').textContent = isErasing ? "Brush" : "Eraser";
+    });
+  
+    // Undo 
+    document.getElementById('undoBtn').addEventListener('click', () => {
+      if (undoStack.length > 0) {
+        const imageData = undoStack.pop();
+        redoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        ctx.putImageData(imageData, 0, 0);
+        saveCanvas();
+      }
+    });
+  
+    // Redo 
+    document.getElementById('redoBtn').addEventListener('click', () => {
+      if (redoStack.length > 0) {
+        const imageData = redoStack.pop();
+        undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        ctx.putImageData(imageData, 0, 0);
+        saveCanvas();
+      }
+    });
+  
+    // Clear canvas with confirmation
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      const confirmClear = confirm("Are you sure you want to clear the canvas?");
+      if (confirmClear) {
+        undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        redoStack = [];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        saveCanvas();
+      }
+    });
+  
+    // Keyboard shortcuts: Ctrl+Z for undo, Ctrl+Y for redo
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        document.getElementById('undoBtn').click();
+      }
+      if (e.ctrlKey && e.key === 'y') {
+        e.preventDefault();
+        document.getElementById('redoBtn').click();
+      }
+    });
+  
+    // Save current canvas to localStorage
+    function saveCanvas() {
+      localStorage.setItem('savedCanvas', canvas.toDataURL());
+    }
+  
+    // Load canvas from localStorage on page load
+    function loadCanvas() {
+      const dataURL = localStorage.getItem('savedCanvas');
+      if (dataURL) {
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0);
+        img.src = dataURL;
+      }
+    }
+  </script>
+  
+
+<style>
+    canvas {
+        border: 2px solid #000;
+        background-color: #fff;
+        display: block;
+        margin: 20px auto;
+    }
+</style>
 {% endblock %}

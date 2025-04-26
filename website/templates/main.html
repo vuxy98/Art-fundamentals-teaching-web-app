@@ -4,7 +4,9 @@
 {% block content %}
 <h2>Posts</h2>
 <div class="container">
-  <a href="{{ url_for('views.create_post') }}" class="btn btn-primary" >+ Create Your Post!</a>
+  <div class="row mb-3">
+    <a href="{{ url_for('views.create_post') }}" class="btn btn-primary" >+ Create Your Post!</a>
+  </div>
   <div class="col-md-6 text-right">
     <strong>Sort by:</strong>
     <a href="{{ url_for('views.main', sort_by='recent') }}" 

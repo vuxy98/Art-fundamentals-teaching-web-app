@@ -4,6 +4,10 @@
 {% block content %}
 <!-- Display Post -->
 <div class="card mb-4">
+  <div class="mb-2">
+    <a href="{{ url_for('views.main') }}" class="btn btn-sm btn-outline-secondary">← Back to main page</a>
+  </div>
+
     <div class="card-body">
       <h4 class="card-title">{{ post.post_title }}</h4>
       <p class="card-text">{{ post.content }}</p>

@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 
 views = Blueprint('views', __name__)
 #home page, get n post would be used for later
-@views.route('/', methods=['GET', 'POST'])
+@views.route('/home', methods=['GET', 'POST'])
 def landing():
     courses = Course.query.filter_by(is_locked=False).order_by(Course.order).limit(3).all() #only letting guests see 3 of the courses
     posts = Posts.query.filter_by(is_locked=False).order_by(Posts.likes).limit(5).all() #only letting guests see 5 preview posts
@@ -18,7 +18,7 @@ def landing():
 
 
 #main website, the bread and butter stuffs here
-@views.route('/main')
+@views.route('/')
 @login_required
 def main():
     sort_by = request.args.get('sort_by', 'upvotes')  # Default sort by upvotes
@@ -76,7 +76,7 @@ def problems():
         problems = Problem.query.order_by(Problem.timestamp.desc()).all()
     return render_template("problems.html", problems=problems, sort_by=sort_by)
 
-@views.route('/problem/<int:problem_id>', methods=['GET', 'POST'])
+@views.route('/problem/<int:problem_id>', methods=['GET', 'POST']) #show details of the questions like replies and upvotes
 @login_required
 def problem_detail(problem_id):
     problem = Problem.query.get_or_404(problem_id)
@@ -96,7 +96,7 @@ def problem_detail(problem_id):
 
     return render_template('problem_detail.html', problem=problem, comments=comments, user=current_user)
 
-# Fix for create_problem route
+# create a question route
 @views.route('/main/create_problem', methods=['GET', 'POST'])
 @login_required
 def create_problem():
@@ -305,3 +305,8 @@ def delete_post(post_id):
     
     flash("Post deleted successfully!", category="success")
     return redirect(url_for('views.delete_post_page'))
+
+@views.route('main/tools')
+@login_required
+def tools():
+    return render_template("tools.html", user=current_user)
