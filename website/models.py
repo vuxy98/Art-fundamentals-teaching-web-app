@@ -23,6 +23,17 @@ class Course(db.Model):
     image_url = db.Column(db.String(200))  # thumbnail for the course
     order = db.Column(db.Integer, unique=True)  # sort by month or course order
 
+class CourseContent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+
+    title = db.Column(db.String(100), nullable=False)
+    text = db.Column(db.Text)  # description, notes, etc.
+    video_url = db.Column(db.String(300))  # YouTube video link
+    order = db.Column(db.Integer)  # order the contents like Lesson 1, Lesson 2...
+
+    course = db.relationship('Course', backref=db.backref('contents', lazy=True, cascade="all, delete"))
+
 #association table for tags and posts
 post_tags = db.Table('post_tags',
     db.Column('post_id', db.Integer, db.ForeignKey('posts.id'), primary_key=True),

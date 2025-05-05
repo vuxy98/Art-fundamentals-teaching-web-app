@@ -7,6 +7,31 @@
     <p><strong>Month:</strong> {{ course.month }}</p>
     <img src="{{ course.image_url }}" class="img-fluid mb-3" alt="{{ course.course_name }}">
     <p>{{ course.description }}</p>
-    <!-- You can add course lessons/materials below -->
+
+    {% if course.contents %}
+    <hr>
+    <h3>Lessons</h3>
+    <div class="lessons-list">
+        {% for lesson in course.contents|sort(attribute='order') %}
+            <div class="card mb-4 p-3">
+                <h4>{{ lesson.order }}. {{ lesson.title }}</h4>
+                {% if lesson.text %}
+                    <p>{{ lesson.text }}</p>
+                {% endif %}
+
+                {% if lesson.video_url %}
+                    {% set video_id = lesson.video_url.split("v=")[-1].split("&")[0] if "youtube.com" in lesson.video_url else lesson.video_url.split("/")[-1] %}
+                    <div class="ratio ratio-16x9 mb-2">
+                        <iframe src="https://www.youtube.com/embed/{{ video_id }}"
+                                title="Lesson video"
+                                allowfullscreen></iframe>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No lessons added yet for this course.</p>
+{% endif %}
 </div>
 {% endblock %}

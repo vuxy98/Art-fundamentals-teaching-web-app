@@ -1,28 +1,51 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Admin Dashboard</h2>
+
 <ul>
   {% for course in courses %}
     <li>{{ course.course_name }} - {{ course.month }}</li>
   {% endfor %}
 </ul>
-<h2>Add New Course?</h2>
+
+<h2>Add New Course</h2>
 <form action="{{ url_for('admin.add_course') }}" method="POST" enctype="multipart/form-data">
   <input name="course_name" placeholder="Course Title" required>
   <input name="month" placeholder="Month" required>
   <input name="order" type="number" placeholder="Order" required>
-  <h5>Course Thumbnail</h5><input type="file" name="image_file" accept="image/*"><br>
+  <h5>Course Thumbnail</h5>
+  <input type="file" name="image_file" accept="image/*"><br>
   <textarea name="description" placeholder="Description"></textarea>
   <button type="submit">Add Course</button>
 </form>
+
+<hr>
+
 {% for course in courses %}
   <div class="course card p-3 mb-3">
     <h3>{{ course.course_name }}</h3>
-    <a href="{{ url_for('admin.edit_course', course_id=course.id) }}" class="btn btn-primary">Edit</a>
-    <button onclick="deleteCourse({{ course.id }})" class="btn btn-danger">Delete</button>
+    <a href="{{ url_for('admin.edit_course', course_id=course.id) }}" class="btn btn-primary">Edit Course</a>
+    
+    <!-- add a lesson, the upper part was for course descriptions n thumbnails -->
+    <a href="{{ url_for('admin.add_lesson', course_id=course.id) }}" class="btn btn-success">Add Lesson</a>
+    
+    <!-- list of lessons -->
+    {% if course.lessons %}
+      <ul class="mt-3">
+        {% for lesson in course.lessons %}
+          <li>
+            <strong>{{ lesson.order }}.</strong> {{ lesson.title }}
+            {% if lesson.video_url %}
+              - <a href="{{ lesson.video_url }}" target="_blank">Video</a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    
+    <button onclick="deleteCourse({{ course.id }})" class="btn btn-danger mt-2">Delete</button>
   </div>
 {% endfor %}
-
 
 <script>
   function deleteCourse(courseId) {
@@ -37,6 +60,4 @@
       });
   }
 </script>
-  
-
 {% endblock %}

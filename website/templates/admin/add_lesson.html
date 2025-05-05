@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Add Lesson to "{{ course.course_name }}"</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="title" class="form-label">Lesson Title</label>
+            <input type="text" class="form-control" name="title" required>
+        </div>
+        <div class="mb-3">
+            <label for="text" class="form-label">Lesson Text</label>
+            <textarea class="form-control" name="text" rows="6" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="video_url" class="form-label">Video URL (optional)</label>
+            <input type="url" class="form-control" name="video_url">
+        </div>
+        <div class="mb-3">
+            <label for="order" class="form-label">Display Order</label>
+            <input type="number" class="form-control" name="order" value="0">
+        </div>
+        <button type="submit" class="btn btn-success">Add Lesson</button>
+    </form>
+</div>
+{% endblock %}

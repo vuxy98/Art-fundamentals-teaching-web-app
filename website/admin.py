@@ -2,9 +2,10 @@ import os
 from flask import Blueprint,current_app, json, jsonify, render_template, redirect, request, flash, url_for, abort
 from flask_login import login_required, current_user
 from functools import wraps
-from .models import Course, db
+from .models import CourseContent, Course, db
 from werkzeug.utils import secure_filename
 from .models import Posts
+import re
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -140,3 +141,47 @@ def delete_post(post_id):
     db.session.commit()
     flash('Post deleted.', 'danger')
     return redirect(url_for('admin.moderate_posts'))
+
+def convert_youtube_url_to_embed(url):
+    """Convert regular YouTube URL to embed URL"""
+    match = re.match(r'.*youtu(?:\.be/|be\.com/watch\?v=)([\w-]+)', url)
+    if match:
+        video_id = match.group(1)
+        return f'https://www.youtube.com/embed/{video_id}'
+    return url  # return original if pattern not matched
+
+@admin.route('/course/<int:course_id>/add_lesson', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_lesson(course_id):
+    course = Course.query.get_or_404(course_id)
+
+    if request.method == 'POST':
+        title = request.form['title']
+        text = request.form['text']
+        video_url = request.form.get('video_url')
+        order = request.form.get('order', 0)
+
+        try:
+            order = int(order)
+        except ValueError:
+            flash("Order must be a number.", "danger")
+            return redirect(request.url)
+
+        # convert ytb URL
+        if video_url:
+            video_url = convert_youtube_url_to_embed(video_url)
+
+        lesson = CourseContent(
+            title=title,
+            text=text,
+            video_url=video_url if video_url else None,
+            order=order,
+            course=course
+        )
+        db.session.add(lesson)
+        db.session.commit()
+        flash('Lesson added!', 'success')
+        return redirect(url_for('admin.dashboard'))
+
+    return render_template('admin/add_lesson.html', user=current_user, course=course)
