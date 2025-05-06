@@ -6,9 +6,30 @@ from .models import db,Comment, Course, Posts, Tag, Upvote, Problem, ProblemComm
 import json
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import joinedload
+from datetime import datetime
 
 
 views = Blueprint('views', __name__)
+# this formula is used to calculate the score of the posts, it is used to sort the posts in the main page, credit to reddit for the formula
+# the score is calculated based on the number of upvotes, comments, and the age of the post
+# Formula: score = (upvotes + 2 * comments) / ((age_in_hours + 2) ** gravity)
+# gravity is a constant that determines how quickly the score decreases with age
+def calculate_post_score(post, gravity=1.3):
+    upvotes = len(post.upvotes)
+    comments = len(post.comments)
+    age_in_seconds = (datetime.utcnow() - post.timestamp).total_seconds()
+    age_in_hours = age_in_seconds / 3600
+    score = (upvotes + 2 * comments) / ((age_in_hours + 2) ** gravity)
+    return score
+# this formula use the same logic with main post score calculations, used to sort the problems in the problems page
+def calculate_problem_score(problem, gravity=1.3):
+    upvotes = problem.upvotes.count()
+    comments = problem.comments.count()
+    age_in_seconds = (datetime.utcnow() - problem.timestamp).total_seconds()
+    age_in_hours = age_in_seconds / 3600
+    score = (upvotes + 2 * comments) / ((age_in_hours + 2) ** gravity)
+    return score
+
 #home page, get n post would be used for later
 @views.route('/home', methods=['GET', 'POST'])
 def landing():
@@ -23,17 +44,17 @@ def landing():
 def main():
     sort_by = request.args.get('sort_by', 'upvotes')  # Default sort by upvotes
     
-    # Always filter by approved posts and use joinedload for efficiency
+    # always filter by approved posts and use joinedload for efficiency
     approved_posts = Posts.query.options(
         joinedload(Posts.comments), 
         joinedload(Posts.upvotes)
     ).filter_by(is_approved=True).all()
     
-    # Sort based on user preference
+    # sort based on user preference
     if sort_by == 'recent':
         approved_posts.sort(key=lambda post: post.timestamp, reverse=True)
-    else:  # Default to upvotes
-        approved_posts.sort(key=lambda post: (len(post.upvotes), post.timestamp), reverse=True)
+    else:  # default
+        approved_posts.sort(key=lambda post: calculate_post_score(post), reverse=True)
     
     return render_template("main.html", posts=approved_posts, sort_by=sort_by)
 #comments for posts
@@ -65,16 +86,21 @@ def main_courses():
     return render_template("courses.html", user=current_user, courses=courses)
 
 
-@views.route('/main/problems')# problems forum
+@views.route('/main/problems')  # problems forum
 @login_required
 def problems():
-    sort_by = request.args.get('sort_by', 'recent')
+    sort_by = request.args.get('sort_by', 'recent')  # Default sort by recent
+
+    # Fetch all approved problems
+    approved_problems = Problem.query.filter_by(is_approved=True).all()
+
+    #sort based on user preference
     if sort_by == 'upvotes':
-        problems = Problem.query.all()
-        problems.sort(key=lambda p: len(p.upvotes), reverse=True)
-    else:
-        problems = Problem.query.order_by(Problem.timestamp.desc()).all()
-    return render_template("problems.html", problems=problems, sort_by=sort_by)
+        approved_problems.sort(key=lambda problem: calculate_problem_score(problem), reverse=True)
+    else:  #default to sorting by recent
+        approved_problems.sort(key=lambda problem: problem.timestamp, reverse=True)
+
+    return render_template("problems.html", problems=approved_problems, sort_by=sort_by)
 
 @views.route('/problem/<int:problem_id>', methods=['GET', 'POST']) #show details of the questions like replies and upvotes
 @login_required
@@ -140,7 +166,7 @@ def create_problem():
     
     return render_template("create_problem.html", user=current_user)  # Added template rendering
 
-# Fix for problem_upvote route
+# problem_upvote route
 @views.route('/problem_upvote', methods=['POST'])
 @login_required
 def problem_upvote():
@@ -258,7 +284,7 @@ def search():
         return redirect(url_for('views.main'))
 
     # 3. Filter posts where the tag exists in the tags field (assuming tags is a comma-separated string)
-    # Note: we use ilike for case-insensitive partial matching
+    # Note: I use ilike for case-insensitive partial matching
     matching_posts = Posts.query \
         .join(post_tags) \
         .join(Tag) \

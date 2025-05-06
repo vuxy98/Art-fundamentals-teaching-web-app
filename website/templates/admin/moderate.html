@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Moderation Dashboard</h2>
+
+  <!-- Navigation for moderation type -->
+  <div class="mb-3">
+    <a href="{{ url_for('admin.moderate', type='posts', sort_by=sort_by) }}" class="btn btn-primary {% if moderation_type == 'posts' %}active{% endif %}">Moderate Posts</a>
+    <a href="{{ url_for('admin.moderate', type='problems', sort_by=sort_by) }}" class="btn btn-primary {% if moderation_type == 'problems' %}active{% endif %}">Moderate Problems</a>
+  </div>
+
+  <!-- Sorting options -->
+  <div class="mb-3">
+    <a href="{{ url_for('admin.moderate', type=moderation_type, sort_by='newest') }}" class="btn btn-secondary {% if sort_by == 'newest' %}active{% endif %}">Sort by Newest</a>
+    <a href="{{ url_for('admin.moderate', type=moderation_type, sort_by='oldest') }}" class="btn btn-secondary {% if sort_by == 'oldest' %}active{% endif %}">Sort by Oldest</a>
+  </div>
+
+  <hr>
+
+  <!-- Display items to moderate -->
+  {% if moderation_type == 'posts' %}
+    <h3>Pending Posts</h3>
+    {% for post in items %}
+      <div class="card mb-3 p-3 shadow-sm">
+        <h4>{{ post.post_title }}</h4>
+        <p>{{ post.content }}</p>
+        <p class="text-muted">By {{ post.author.username }} • {{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+
+        {% if post.image_url %}
+          <img src="{{ post.image_url }}" alt="Post Image" class="img-fluid mb-2" style="max-width: 100%;">
+        {% endif %}
+
+        <button onclick="approveItem({{ post.id }}, 'post')" class="btn btn-success btn-sm">Approve</button>
+        <button onclick="rejectItem({{ post.id }}, 'post')" class="btn btn-danger btn-sm">Reject</button>
+      </div>
+    {% else %}
+      <p>No posts are pending.</p>
+    {% endfor %}
+  {% elif moderation_type == 'problems' %}
+    <h3>Pending Problems</h3>
+    {% for problem in items %}
+      <div class="card mb-3 p-3 shadow-sm">
+        <h4>{{ problem.title }}</h4>
+        <p>{{ problem.description }}</p>
+        <p class="text-muted">By {{ problem.user.username }} • {{ problem.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+
+        <button onclick="approveItem({{ problem.id }}, 'problem')" class="btn btn-success btn-sm">Approve</button>
+        <button onclick="rejectItem({{ problem.id }}, 'problem')" class="btn btn-danger btn-sm">Reject</button>
+      </div>
+    {% else %}
+      <p>No problems are pending.</p>
+    {% endfor %}
+  {% endif %}
+
+  <script>
+    function approveItem(itemId, itemType) {
+        fetch(`/admin/approve-${itemType}`, {
+            method: "POST",
+            body: JSON.stringify({ id: itemId }),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((_res) => {
+            window.location.reload();
+        });
+    }
+
+    function rejectItem(itemId, itemType) {
+        fetch(`/admin/reject-${itemType}`, {
+            method: "POST",
+            body: JSON.stringify({ id: itemId }),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((_res) => {
+            window.location.reload();
+        });
+    }
+  </script>
+{% endblock %}
