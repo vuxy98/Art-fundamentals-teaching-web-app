@@ -152,25 +152,6 @@ def add_lesson(course_id):
 
     return render_template('admin/add_lesson.html', user=current_user, course=course)
 
-#delete lesson from a course
-@admin.route('/course/<int:course_id>/delete_lesson', methods=['POST'])
-@login_required
-@admin_required
-def delete_lesson(course_id):
-    data = json.loads(request.data)
-    lesson_id = data.get('lessonId')
-    lesson = CourseContent.query.get(lesson_id)
-
-    if lesson:
-        db.session.delete(lesson)
-        db.session.commit()
-        flash('Lesson deleted successfully!', 'success')
-    else:
-        flash('Lesson not found.', 'danger')
-
-    return jsonify({})
-
-
 # moderation page for posts and problems
 @admin.route('/moderate')
 @login_required
@@ -251,3 +232,29 @@ def reject_problem():
         db.session.commit()
         return jsonify({'message': 'Problem rejected successfully!'}), 200
     return jsonify({'error': 'Problem not found'}), 404
+
+#edit lessons of a course
+@admin.route('/edit_lesson/<int:lesson_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_lesson(lesson_id):
+    lesson = CourseContent.query.get_or_404(lesson_id)
+    if request.method == 'POST':
+        lesson.title = request.form['title']
+        lesson.text = request.form['text']
+        lesson.video_url = request.form['video_url']
+        db.session.commit()
+        flash('Lesson updated!', 'success')
+        return redirect(url_for('views.course_detail', course_id=lesson.course_id))
+    return render_template('admin/edit_lesson.html', lesson=lesson)
+
+@admin.route('/delete_lesson/<int:lesson_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_lesson(lesson_id):
+    lesson = CourseContent.query.get_or_404(lesson_id)
+    course_id = lesson.course_id
+    db.session.delete(lesson)
+    db.session.commit()
+    flash('Lesson deleted.', 'danger')
+    return redirect(url_for('views.course_detail', course_id=course_id))
