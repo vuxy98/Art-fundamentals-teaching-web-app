@@ -6,287 +6,265 @@
 
 <!-- Tabs -->
 <ul class="nav nav-tabs" id="toolsTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="whiteboard-tab" data-bs-toggle="tab" data-bs-target="#whiteboard-content" type="button" role="tab">
-            Whiteboard
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="model-tab" data-bs-toggle="tab" data-bs-target="#model-content" type="button" role="tab">
-            3D Model
-        </button>
-    </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="whiteboard-tab" data-bs-toggle="tab" data-bs-target="#whiteboard-content" type="button" role="tab">
+      Whiteboard
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="model-tab" data-bs-toggle="tab" data-bs-target="#model-content" type="button" role="tab">
+      3D Model
+    </button>
+  </li>
 </ul>
 
 <!-- Tab Content -->
 <div class="tab-content">
-    <!-- Whiteboard Tab -->
-    <div class="tab-pane fade show active" id="whiteboard-content">
-        <div id="tools" style="margin-bottom: 1rem;">
-            <label for="colorPicker">Brush Color:</label>
-            <input type="color" id="colorPicker" value="#000000">
-            
-            <label for="brushSize">Brush Size:</label>
-            <input type="range" id="brushSize" min="1" max="30" value="5">
-            
-            <button id="eraserBtn">Eraser</button>
-            <button id="undoBtn">Undo</button>
-            <button id="redoBtn">Redo</button>
-            <button id="clearBtn">Clear Canvas</button>
-        </div>
-        <canvas id="whiteboard" width="800" height="500"></canvas>
-    </div>
+  <!-- Whiteboard Tab -->
+  <div class="tab-pane fade show active" id="whiteboard-content">
+    <div id="tools" style="margin-bottom: 1rem;">
+      <label for="colorPicker">Brush Color:</label>
+      <input type="color" id="colorPicker" value="#000000">
 
-    <!-- 3D Model Tab -->
-    <div class="tab-pane fade" id="model-content" role="tabpanel">
-        <div class="model-controls mb-3">
-            <label for="modelType" class="form-label">Model Type:</label>
-            <select class="form-select" id="modelType">
-                <option value="cube">Cube</option>
-                <option value="sphere">Sphere</option>
-            </select>
-            
-            <div class="mt-2">
-                <label for="lightControls">Light Position:</label>
-                <input type="range" class="form-range" id="lightX" min="-10" max="10" step="0.1">
-                <input type="range" class="form-range" id="lightY" min="-10" max="10" step="0.1">
-                <input type="range" class="form-range" id="lightZ" min="-10" max="10" step="0.1">
-            </div>
-        </div>
-        <div id="three-container" style="width: 800px; height: 500px; border: 1px solid #ccc;"></div>
+      <label for="brushSize">Brush Size:</label>
+      <input type="range" id="brushSize" min="1" max="30" value="5">
+
+      <button id="eraserBtn">Eraser</button>
+      <button id="undoBtn">Undo</button>
+      <button id="redoBtn">Redo</button>
+      <button id="clearBtn">Clear Canvas</button>
     </div>
+    <canvas id="whiteboard" width="800" height="500"></canvas>
+  </div>
+
+  <!-- 3D Model Tab -->
+  <div class="tab-pane fade" id="model-content" role="tabpanel">
+    <div class="model-controls mb-3">
+      <label for="modelType" class="form-label">Model Type:</label>
+      <select class="form-select" id="modelType">
+        <option value="cube">Cube</option>
+        <option value="sphere">Sphere</option>
+      </select>
+
+      <div class="mt-2">
+        <label>Light Position:</label>
+        <input type="range" class="form-range" id="lightX" min="-10" max="10" step="0.1" value="5">
+        <input type="range" class="form-range" id="lightY" min="-10" max="10" step="0.1" value="5">
+        <input type="range" class="form-range" id="lightZ" min="-10" max="10" step="0.1" value="5">
+      </div>
+    </div>
+    <div id="three-container" style="width: 800px; height: 500px; border: 1px solid #ccc;"></div>
+  </div>
 </div>
 
-<!-- Three.js Scripts -->
+<!-- Three.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
 <script>
-// Initialize Three.js only when 3D Model tab is shown
-document.addEventListener('DOMContentLoaded', function() {
-    let renderer, scene, camera, cube;
-    
-    // Initialize 3D scene when the model tab is shown
-    const modelTab = document.getElementById('model-tab');
-    modelTab.addEventListener('shown.bs.tab', function (event) {
-        if (!renderer) {
-            initThreeJS();
-        }
+document.addEventListener('DOMContentLoaded', function () {
+  let renderer, scene, camera, mesh, directionalLight, controls;
+
+  const modelTab = document.getElementById('model-tab');
+  modelTab.addEventListener('shown.bs.tab', () => {
+    if (!renderer) initThreeJS();
+  });
+
+  function initThreeJS() {
+    const container = document.getElementById('three-container');
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f0f0);
+
+    camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(3, 3, 5);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enablePan = true;
+    controls.enableZoom = true;
+
+    scene.add(new THREE.AmbientLight(0x404040));
+
+    directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(directionalLight);
+
+    mesh = createMesh('cube');
+    scene.add(mesh);
+
+    document.getElementById('modelType').addEventListener('change', () => {
+      scene.remove(mesh);
+      mesh = createMesh(document.getElementById('modelType').value);
+      scene.add(mesh);
     });
 
-    function initThreeJS() {
-        // Scene setup
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf0f0f0);
-
-        // Camera setup
-        const container = document.getElementById('three-container');
-        camera = new THREE.PerspectiveCamera(
-            75,
-            container.clientWidth / container.clientHeight,
-            0.1,
-            1000
+    ['lightX', 'lightY', 'lightZ'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        directionalLight.position.set(
+          parseFloat(document.getElementById('lightX').value),
+          parseFloat(document.getElementById('lightY').value),
+          parseFloat(document.getElementById('lightZ').value)
         );
-        camera.position.z = 5;
-
-        // Renderer setup
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        container.appendChild(renderer.domElement);
-
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0x404040);
-        scene.add(ambientLight);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(5, 5, 5);
-        scene.add(directionalLight);
-
-        // Add cube
-        const geometry = new THREE.BoxGeometry();
-        const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-        cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
-
-        // Animation
-        function animate() {
-            requestAnimationFrame(animate);
-            cube.rotation.x += 0.01;
-            cube.rotation.y += 0.01;
-            renderer.render(scene, camera);
-        }
-        animate();
-    }
-
-    // Handle window resize
-    window.addEventListener('resize', function() {
-        if (renderer) {
-            const container = document.getElementById('three-container');
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        }
+      });
     });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    animate();
+  }
+
+  function createMesh(type) {
+    const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+    if (type === 'sphere') {
+      return new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), material);
+    }
+    return new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), material);
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update(); // allow user-controlled rotation
+    renderer.render(scene, camera);
+  }
 });
 </script>
 
-  <!--White board-->
-  <script>
-    const canvas = document.getElementById('whiteboard');
-    const ctx = canvas.getContext('2d');
-  
-    let drawing = false;
-    let isErasing = false;
-  
-    // Drawing settings
-    let currentColor = document.getElementById('colorPicker').value;
-    let brushSize = document.getElementById('brushSize').value;
-  
-    // History stacks for undo/redo
-    let undoStack = [];
-    let redoStack = [];
-  
-    // Load saved drawing when page loads
-    loadCanvas();
-  
-    // Start drawing
-    canvas.addEventListener('mousedown', (e) => {
-      drawing = true;
-      ctx.beginPath();
-      ctx.moveTo(e.offsetX, e.offsetY);
-  
-      // Save current canvas state before starting new stroke
-      undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-      redoStack = []; // clear redo stack when new action is taken
-    });
-  
-    // Draw as mouse moves
-    canvas.addEventListener('mousemove', (e) => {
-      if (!drawing) return;
-  
-      ctx.lineTo(e.offsetX, e.offsetY);
-      ctx.strokeStyle = isErasing ? "#FFFFFF" : currentColor;
-      ctx.lineWidth = brushSize;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.stroke();
-    });
-  
-    // End drawing
-    canvas.addEventListener('mouseup', () => {
-      drawing = false;
-      ctx.closePath();
-      saveCanvas(); // Save drawing to local storage, will associate this with users accounts later 
-    });
-  
-    // Also stop drawing when mouse leaves the canvas
-    canvas.addEventListener('mouseleave', () => {
-      if (drawing) {
-        drawing = false;
-        ctx.closePath();
-        saveCanvas();
-      }
-    });
-  
-    // Brush color change
-    document.getElementById('colorPicker').addEventListener('change', (e) => {
-      currentColor = e.target.value;
-    });
-  
-    // Brush size change
-    document.getElementById('brushSize').addEventListener('input', (e) => {
-      brushSize = e.target.value;
-    });
-  
-    // Toggle eraser
-    document.getElementById('eraserBtn').addEventListener('click', () => {
-      isErasing = !isErasing;
-      document.getElementById('eraserBtn').textContent = isErasing ? "Brush" : "Eraser";
-    });
-  
-    // Undo 
-    document.getElementById('undoBtn').addEventListener('click', () => {
-      if (undoStack.length > 0) {
-        const imageData = undoStack.pop();
-        redoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-        ctx.putImageData(imageData, 0, 0);
-        saveCanvas();
-      }
-    });
-  
-    // Redo 
-    document.getElementById('redoBtn').addEventListener('click', () => {
-      if (redoStack.length > 0) {
-        const imageData = redoStack.pop();
-        undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-        ctx.putImageData(imageData, 0, 0);
-        saveCanvas();
-      }
-    });
-  
-    // Clear canvas with confirmation
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      const confirmClear = confirm("Are you sure you want to clear the canvas?");
-      if (confirmClear) {
-        undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-        redoStack = [];
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        saveCanvas();
-      }
-    });
-  
-    // Keyboard shortcuts: Ctrl+Z for undo, Ctrl+Y for redo
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 'z') {
-        e.preventDefault();
-        document.getElementById('undoBtn').click();
-      }
-      if (e.ctrlKey && e.key === 'y') {
-        e.preventDefault();
-        document.getElementById('redoBtn').click();
-      }
-    });
-  
-    // Save current canvas to localStorage
-    function saveCanvas() {
-      localStorage.setItem('savedCanvas', canvas.toDataURL());
-    }
-  
-    // Load canvas from localStorage on page load
-    function loadCanvas() {
-      const dataURL = localStorage.getItem('savedCanvas');
-      if (dataURL) {
-        const img = new Image();
-        img.onload = () => ctx.drawImage(img, 0, 0);
-        img.src = dataURL;
-      }
-    }
-  </script>
-  
+<!-- Whiteboard Script -->
+<script>
+const canvas = document.getElementById('whiteboard');
+const ctx = canvas.getContext('2d');
 
+let drawing = false;
+let isErasing = false;
+let currentColor = document.getElementById('colorPicker').value;
+let brushSize = document.getElementById('brushSize').value;
+let undoStack = [];
+let redoStack = [];
+
+loadCanvas();
+
+canvas.addEventListener('mousedown', (e) => {
+  drawing = true;
+  ctx.beginPath();
+  ctx.moveTo(e.offsetX, e.offsetY);
+  undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+  redoStack = [];
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!drawing) return;
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.strokeStyle = isErasing ? "#FFFFFF" : currentColor;
+  ctx.lineWidth = brushSize;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.stroke();
+});
+
+canvas.addEventListener('mouseup', () => {
+  drawing = false;
+  ctx.closePath();
+  saveCanvas();
+});
+
+canvas.addEventListener('mouseleave', () => {
+  if (drawing) {
+    drawing = false;
+    ctx.closePath();
+    saveCanvas();
+  }
+});
+
+document.getElementById('colorPicker').addEventListener('change', e => currentColor = e.target.value);
+document.getElementById('brushSize').addEventListener('input', e => brushSize = e.target.value);
+
+document.getElementById('eraserBtn').addEventListener('click', () => {
+  isErasing = !isErasing;
+  document.getElementById('eraserBtn').textContent = isErasing ? "Brush" : "Eraser";
+});
+
+document.getElementById('undoBtn').addEventListener('click', () => {
+  if (undoStack.length) {
+    const imageData = undoStack.pop();
+    redoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    ctx.putImageData(imageData, 0, 0);
+    saveCanvas();
+  }
+});
+
+document.getElementById('redoBtn').addEventListener('click', () => {
+  if (redoStack.length) {
+    const imageData = redoStack.pop();
+    undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    ctx.putImageData(imageData, 0, 0);
+    saveCanvas();
+  }
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (confirm("Are you sure you want to clear the canvas?")) {
+    undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    redoStack = [];
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    saveCanvas();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 'z') {
+    e.preventDefault();
+    document.getElementById('undoBtn').click();
+  }
+  if (e.ctrlKey && e.key === 'y') {
+    e.preventDefault();
+    document.getElementById('redoBtn').click();
+  }
+});
+
+function saveCanvas() {
+  localStorage.setItem('savedCanvas', canvas.toDataURL());
+}
+
+function loadCanvas() {
+  const dataURL = localStorage.getItem('savedCanvas');
+  if (dataURL) {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0);
+    img.src = dataURL;
+  }
+}
+</script>
+
+<!-- Styling -->
 <style>
 canvas {
-    border: 2px solid #000;
-    background-color: #fff;
-    display: block;
-    margin: 0 auto;
+  border: 2px solid #000;
+  background-color: #fff;
+  display: block;
+  margin: 0 auto;
 }
-
 #canvas-container {
-    margin: 0 auto;
+  margin: 0 auto;
 }
-
 .tab-content {
-    padding-top: 20px;
+  padding-top: 20px;
 }
-
 #three-container {
-    margin: 0 auto;
-    background-color: #f0f0f0;
+  margin: 0 auto;
+  background-color: #f0f0f0;
 }
-
 .model-controls {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 </style>
 {% endblock %}
