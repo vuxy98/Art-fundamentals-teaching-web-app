@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="lesson-header">
+        <h2>{{ lesson.title }}</h2>
+        <div class="progress-indicator">
+            {% if progress.completed %}
+            <span class="badge bg-success">Completed</span>
+            {% else %}
+            <span class="badge bg-warning">In Progress</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if lesson.video_url %}
+    <div class="video-container mb-4">
+        <iframe 
+            width="100%" 
+            height="480" 
+            src="{{ lesson.video_url }}" 
+            frameborder="0" 
+            allowfullscreen
+            id="lessonVideo">
+        </iframe>
+    </div>
+    {% endif %}
+
+    <div class="lesson-content mb-4">
+        {{ lesson.text|safe }}
+    </div>
+
+    <div class="user-actions">
+        <textarea 
+            class="form-control mb-3" 
+            id="userNotes" 
+            placeholder="Take notes here...">{{ progress.notes }}</textarea>
+        
+        <button 
+            class="btn btn-success" 
+            id="markComplete" 
+            {% if progress.completed %}disabled{% endif %}>
+            Mark as Complete
+        </button>
+    </div>
+</div>
+
+<script>
+document.getElementById('markComplete').addEventListener('click', function() {
+    fetch('/mark_lesson_complete/{{ lesson.id }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            this.disabled = true;
+            location.reload();
+        }
+    });
+});
+
+// track video watch time for progress, though this would hevily depend on the user dedication, willingness to watch the video 
+let videoElement = document.getElementById('lessonVideo');
+let watchTime = 0;
+let timer;
+
+if (videoElement) {
+    videoElement.addEventListener('play', function() {
+        timer = setInterval(() => {
+            watchTime++;
+            // update every minute
+            if (watchTime % 60 === 0) {
+                updateWatchTime(watchTime);
+            }
+        }, 1000);
+    });
+
+    videoElement.addEventListener('pause', function() {
+        clearInterval(timer);
+        updateWatchTime(watchTime);
+    });
+}
+
+function updateWatchTime(time) {
+    fetch('/update_watch_time/{{ lesson.id }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            watch_time: time
+        })
+    });
+}
+</script>
+{% endblock %}

@@ -13,6 +13,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(150), unique=True, nullable=False)  # renamed from first_name
     user_image = db.Column(db.String(300), nullable=True)  # path to profile image
     is_admin = db.Column(db.Boolean, default=False) # check to see if this is an admin or not
+    lesson_progress = db.relationship('LessonProgress', backref='user', lazy=True) #user's lesson progress, tracked by watching the tutorial video in the lesson
 #------------------------------------------------------------------------------------------------------------------------
 class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -39,6 +40,15 @@ post_tags = db.Table('post_tags',
     db.Column('post_id', db.Integer, db.ForeignKey('posts.id'), primary_key=True),
     db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True)
 )
+#lesson progress model to track user's progress in each lesson
+class LessonProgress(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    lesson_id = db.Column(db.Integer, db.ForeignKey('course_content.id'))
+    completed = db.Column(db.Boolean, default=False)
+    last_accessed = db.Column(db.DateTime, default=datetime.utcnow)
+    watch_time = db.Column(db.Integer, default=0)  # Store time spent in seconds
+    notes = db.Column(db.Text, nullable=True)  # Optional user notes
 #------------------------------------------------------------------------------------------------------------------------
 problem_tags = db.Table('problem_tags',
     db.Column('problem_id', db.Integer, db.ForeignKey('problem.id'), primary_key=True),

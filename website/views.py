@@ -2,7 +2,7 @@
 import os
 from flask import Blueprint, redirect, url_for,render_template, flash, request,jsonify,current_app
 from flask_login import login_required, current_user
-from .models import db,Comment, Course, Posts, Tag, Upvote, Problem, ProblemComment, ProblemUpvote, post_tags
+from .models import db, CourseContent, LessonProgress, Comment, Course, Posts, Tag, Upvote, Problem, ProblemComment, ProblemUpvote, post_tags
 import json
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import joinedload
@@ -336,3 +336,43 @@ def delete_post(post_id):
 @login_required
 def tools():
     return render_template("tools.html", user=current_user)
+
+@views.route('/lesson/<int:lesson_id>', methods=['GET', 'POST'])
+@login_required
+def lesson_view(lesson_id):
+    lesson = CourseContent.query.get_or_404(lesson_id)
+    progress = LessonProgress.query.filter_by(
+        user_id=current_user.id,
+        lesson_id=lesson_id
+    ).first()
+    
+    if not progress:
+        progress = LessonProgress(user_id=current_user.id, lesson_id=lesson_id)
+        db.session.add(progress)
+    
+    progress.last_accessed = datetime.utcnow()
+    db.session.commit()
+    
+    return render_template(
+        'lesson_view.html',
+        lesson=lesson,
+        progress=progress,
+        user=current_user
+    )
+
+@views.route('/mark_lesson_complete/<int:lesson_id>', methods=['POST'])
+@login_required
+def mark_lesson_complete(lesson_id):
+    progress = LessonProgress.query.filter_by(
+        user_id=current_user.id,
+        lesson_id=lesson_id
+    ).first()
+    
+    if not progress:
+        progress = LessonProgress(user_id=current_user.id, lesson_id=lesson_id)
+        db.session.add(progress)
+    
+    progress.completed = True
+    db.session.commit()
+    
+    return jsonify({'status': 'success'})

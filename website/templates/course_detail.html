@@ -11,10 +11,32 @@
     {% if course.contents %}
     <hr>
     <h3>Lessons</h3>
+    <!-- overall progress bar -->
+    {% set completed_lessons = current_user.lesson_progress|selectattr('completed')|list|length %}
+    {% set total_lessons = course.contents|length %}
+    {% set progress_percent = (completed_lessons / total_lessons * 100)|round|int if total_lessons > 0 else 0 %}
+    <div class="progress mb-4">
+        <div class="progress-bar" role="progressbar" style="width: {{ progress_percent }}%"
+             aria-valuenow="{{ progress_percent }}" aria-valuemin="0" aria-valuemax="100">
+            {{ progress_percent }}% Complete
+        </div>
+    </div>
+
     <div class="lessons-list">
         {% for lesson in course.contents|sort(attribute='order') %}
+        {% set progress = current_user.lesson_progress|selectattr('lesson_id', 'equalto', lesson.id)|first %}
         <div class="card mb-4 p-3">
-            <h4>{{ lesson.order }}. {{ lesson.title }}</h4>
+            <div class="d-flex justify-content-between align-items-center">
+                <h4>{{ lesson.order }}. {{ lesson.title }}</h4>
+                <!-- lesson progress badge -->
+                {% if progress and progress.completed %}
+                    <span class="badge bg-success">Completed</span>
+                {% elif progress %}
+                    <span class="badge bg-warning">In Progress</span>
+                {% else %}
+                    <span class="badge bg-secondary">Not Started</span>
+                {% endif %}
+            </div>
             
             {% if current_user.is_authenticated and current_user.is_admin %}
             <div class="mb-2">
@@ -25,6 +47,18 @@
             </div>
             {% endif %}
             
+            <!-- lesson progress details -->
+            {% if progress %}
+            <div class="lesson-progress-details mb-2">
+                <small class="text-muted">
+                    Last accessed: {{ progress.last_accessed.strftime('%Y-%m-%d %H:%M') if progress.last_accessed }}
+                    {% if progress.watch_time %}
+                    | Watch time: {{ (progress.watch_time / 60)|round|int }} minutes
+                    {% endif %}
+                </small>
+            </div>
+            {% endif %}
+
             {% if lesson.text %}
                 <p>{{ lesson.text }}</p>
             {% endif %}
@@ -37,6 +71,20 @@
                             allowfullscreen></iframe>
                 </div>
             {% endif %}
+
+            <!-- continue/start button -->
+            <div class="mt-2">
+                <a href="{{ url_for('views.lesson_view', lesson_id=lesson.id) }}" 
+                   class="btn btn-primary">
+                    {% if progress and progress.completed %}
+                        Review Lesson
+                    {% elif progress %}
+                        Continue Lesson
+                    {% else %}
+                        Start Lesson
+                    {% endif %}
+                </a>
+            </div>
         </div>
         {% endfor %}
     </div>
@@ -44,4 +92,25 @@
     <p>No lessons added yet for this course.</p>
 {% endif %}
 </div>
+
+<style>
+.lesson-progress-details {
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.progress {
+    height: 25px;
+}
+
+.progress-bar {
+    font-size: 0.9em;
+    line-height: 25px;
+}
+
+.badge {
+    font-size: 0.9em;
+    padding: 0.5em 0.8em;
+}
+</style>
 {% endblock %}
