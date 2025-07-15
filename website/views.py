@@ -14,7 +14,7 @@ views = Blueprint('views', __name__)
 # the score is calculated based on the number of upvotes, comments, and the age of the post
 # Formula: score = (upvotes + 2 * comments) / ((age_in_hours + 2) ** gravity)
 # gravity is a constant that determines how quickly the score decreases with age
-def calculate_post_score(post, gravity=1.8):  # Increased gravity
+def calculate_post_score(post, gravity=1.8): 
     upvotes = len(post.upvotes)
     comments = len(post.comments)
     age_in_seconds = (datetime.utcnow() - post.timestamp).total_seconds()
@@ -29,7 +29,7 @@ def calculate_post_score(post, gravity=1.8):  # Increased gravity
     # Newer posts get a boost
     recency_boost = 1.0
     if age_in_hours < 24:  # Posts less than 24 hours old
-        recency_boost = 2.0
+        recency_boost = 4.0
     elif age_in_hours < 72:  # Posts less than 3 days old
         recency_boost = 1.5
     
