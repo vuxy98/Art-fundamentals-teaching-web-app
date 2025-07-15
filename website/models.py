@@ -87,7 +87,7 @@ class Posts(db.Model):
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
-
+            
     def __repr__(self):
         return f'<Tag {self.name}>'
 #------------------------------------------------------------------------------------------------------------------------    
@@ -133,4 +133,55 @@ class ProblemComment(db.Model): #problems comment
     user = db.relationship('User', backref='problem_comments')
 
 #------------------------------------------------------------------------------------------------------------------------
+# schedule stuffs here
+class CourseSchedule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'))
+    title = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    duration_weeks = db.Column(db.Integer)
+    created_by_admin = db.Column(db.Boolean, default=True)
+    
+    # Relationships
+    tasks = db.relationship('ScheduleTask', backref='schedule', cascade='all, delete')
+    course = db.relationship('Course', backref='schedules')
 
+class ScheduleTask(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    schedule_id = db.Column(db.Integer, db.ForeignKey('course_schedule.id'))
+    title = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    day_number = db.Column(db.Integer)  # 1-7 week days
+    week_number = db.Column(db.Integer)
+    duration_minutes = db.Column(db.Integer)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('course_content.id'), nullable=True)
+    
+    # Optional link to specific lesson
+    lesson = db.relationship('CourseContent')
+
+class UserSchedule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    base_schedule_id = db.Column(db.Integer, db.ForeignKey('course_schedule.id'))
+    title = db.Column(db.String(100))
+    start_date = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relationships
+    tasks = db.relationship('UserTask', backref='schedule', cascade='all, delete')
+    user = db.relationship('User', backref='schedules')
+    base_schedule = db.relationship('CourseSchedule')
+
+class UserTask(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_schedule_id = db.Column(db.Integer, db.ForeignKey('user_schedule.id'))
+    title = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    planned_date = db.Column(db.DateTime)
+    completed = db.Column(db.Boolean, default=False)
+    completed_date = db.Column(db.DateTime, nullable=True)
+    duration_minutes = db.Column(db.Integer)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('course_content.id'), nullable=True)
+    
+    # Optional link to specific lesson 
+    lesson = db.relationship('CourseContent')

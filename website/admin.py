@@ -258,3 +258,37 @@ def delete_lesson(lesson_id):
     db.session.commit()
     flash('Lesson deleted.', 'danger')
     return redirect(url_for('views.course_detail', course_id=course_id))
+
+# Create a new course with default schedule
+@admin.route('/create_course', methods=['GET', 'POST'])
+@admin_required
+def create_course():
+    if request.method == 'POST':
+        course_name = request.form.get('course_name')
+        description = request.form.get('description')
+        month = request.form.get('month')
+        order = request.form.get('order', 0)
+
+        try:
+            order = int(order)
+        except ValueError:
+            flash("Order must be a number.", "danger")
+            return redirect(request.url)
+
+        course = Course(
+            course_name=course_name,
+            description=description,
+            month=month,
+            order=order,
+            is_locked=False  # default to unlocked
+        )
+        db.session.add(course)
+        db.session.commit()
+        
+        # Create default schedule
+        course.create_default_schedule()
+        
+        flash('Course created successfully!', category='success')
+        return redirect(url_for('admin.dashboard'))
+
+    return render_template('admin/create_course.html', user=current_user)

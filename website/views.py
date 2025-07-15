@@ -2,11 +2,11 @@
 import os
 from flask import Blueprint, redirect, url_for,render_template, flash, request,jsonify,current_app
 from flask_login import login_required, current_user
-from .models import db, CourseContent, LessonProgress, Comment, Course, Posts, Tag, Upvote, Problem, ProblemComment, ProblemUpvote, post_tags
+from .models import db,CourseSchedule,UserSchedule,UserTask, CourseContent, LessonProgress, Comment, Course, Posts, Tag, Upvote, Problem, ProblemComment, ProblemUpvote, post_tags
 import json
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import joinedload
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 views = Blueprint('views', __name__)
@@ -14,12 +14,26 @@ views = Blueprint('views', __name__)
 # the score is calculated based on the number of upvotes, comments, and the age of the post
 # Formula: score = (upvotes + 2 * comments) / ((age_in_hours + 2) ** gravity)
 # gravity is a constant that determines how quickly the score decreases with age
-def calculate_post_score(post, gravity=1.3):
+def calculate_post_score(post, gravity=1.8):  # Increased gravity
     upvotes = len(post.upvotes)
     comments = len(post.comments)
     age_in_seconds = (datetime.utcnow() - post.timestamp).total_seconds()
     age_in_hours = age_in_seconds / 3600
-    score = (upvotes + 2 * comments) / ((age_in_hours + 2) ** gravity)
+    
+    # Base score from interactions
+    interaction_score = (upvotes + 2 * comments)
+    
+    # Time decay factor
+    time_decay = pow((age_in_hours + 2), gravity)
+    
+    # Newer posts get a boost
+    recency_boost = 1.0
+    if age_in_hours < 24:  # Posts less than 24 hours old
+        recency_boost = 2.0
+    elif age_in_hours < 72:  # Posts less than 3 days old
+        recency_boost = 1.5
+    
+    score = (interaction_score * recency_boost) / time_decay
     return score
 # this formula use the same logic with main post score calculations, used to sort the problems in the problems page
 def calculate_problem_score(problem, gravity=1.3):
