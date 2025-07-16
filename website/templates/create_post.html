@@ -1,11 +1,254 @@
 {% extends "base.html" %}
 {% block title %}Create Post{% endblock %}
+
 {% block content %}
-<form method="POST" enctype="multipart/form-data">
-  <input type="text" name="post_title" placeholder="Title" required><br>
-  <textarea name="content" placeholder="Write something..." required></textarea><br>
-  <input type="file" name="image_file" accept="image/*"><br>
-  <input type="text" name="tags" placeholder="Tags (e.g., #portrait #sketch)"><br>
-  <button type="submit">Post</button>
-</form>
+<div class="container-fluid">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white text-center">
+          <h3 class="mb-0">
+            <i class="fas fa-plus-circle me-2"></i>
+            Create New Post
+          </h3>
+          <p class="mb-0 mt-2 opacity-75">Share your artistic journey with the community!</p>
+        </div>
+        
+        <div class="card-body p-4">
+          <form method="POST" enctype="multipart/form-data" id="postForm">
+            <!-- Title Input -->
+            <div class="mb-4">
+              <label for="post_title" class="form-label fw-bold">
+                <i class="fas fa-heading text-primary me-2"></i>Title
+              </label>
+              <input type="text" 
+                     class="form-control form-control-lg" 
+                     id="post_title"
+                     name="post_title" 
+                     placeholder="A caption for your post, artwork ..." 
+                     required>
+            </div>
+
+            <!-- Content Textarea -->
+            <div class="mb-4">
+              <label for="content" class="form-label fw-bold">
+                <i class="fas fa-edit text-primary me-2"></i>Content
+              </label>
+              <textarea class="form-control" 
+                        id="content"
+                        name="content" 
+                        rows="6" 
+                        placeholder="Share your thoughts, techniques, or story behind your artwork..." 
+                        required></textarea>
+              <div class="form-text">
+                <span id="charCount">0</span> characters
+              </div>
+            </div>
+
+            <!-- Image Upload -->
+            <div class="mb-4">
+              <label for="image_file" class="form-label fw-bold">
+                <i class="fas fa-image text-primary me-2"></i>Upload Image
+              </label>
+              <div class="input-group">
+                <input type="file" 
+                       class="form-control" 
+                       id="image_file"
+                       name="image_file" 
+                       accept="image/*"
+                       onchange="previewImage(event)">
+                <label class="input-group-text" for="image_file">
+                  <i class="fas fa-upload"></i>
+                </label>
+              </div>
+              <div class="form-text">
+                <i class="fas fa-info-circle"></i>
+                Supported formats: JPG, PNG, GIF (Max 10MB)
+              </div>
+              
+              <!-- Image Preview -->
+              <div id="imagePreview" class="mt-3" style="display: none;">
+                <div class="card">
+                  <img id="preview" src="#" alt="Preview" class="card-img-top" style="max-height: 300px; object-fit: cover;">
+                  <div class="card-body text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeImage()">
+                      <i class="fas fa-trash"></i> Remove Image
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tags Input -->
+            <div class="mb-4">
+              <label for="tags" class="form-label fw-bold">
+                <i class="fas fa-tags text-primary me-2"></i>Tags
+              </label>
+              <input type="text" 
+                     class="form-control" 
+                     id="tags"
+                     name="tags" 
+                     placeholder="Add tags to help others find your post (e.g., #portrait #sketch #watercolor)">
+              <div class="form-text">
+                <i class="fas fa-lightbulb"></i>
+                Use hashtags to categorize your post.
+              </div>
+              <div id="tagSuggestions" class="mt-2"></div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                <i class="fas fa-paper-plane me-2"></i>
+                Publish Post
+              </button>
+              <a href="{{ url_for('views.main') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Back to Main
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .card {
+    border-radius: 15px;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .card:hover {
+    transform: translateY(-2px);
+  }
+  
+  .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+  }
+  
+  .form-control-lg {
+    font-size: 1.1rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #0004ff 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 30px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  }
+  
+  .tag-suggestion {
+    display: inline-block;
+    background: #e9ecef;
+    color: #495057;
+    padding: 4px 8px;
+    margin: 2px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .tag-suggestion:hover {
+    background: #007bff;
+    color: white;
+  }
+  
+  #imagePreview .card {
+    border: 2px dashed #dee2e6;
+    transition: border-color 0.3s ease;
+  }
+  
+  #imagePreview .card:hover {
+    border-color: #007bff;
+  }
+  
+  .form-text {
+    color: #6c757d;
+    font-size: 0.875rem;
+  }
+  
+  .form-label {
+    color: #495057;
+    margin-bottom: 0.5rem;
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #002fff 100%) !important;
+    border-radius: 15px 15px 0 0 !important;
+  }
+</style>
+
+<script>
+// Character counter for content
+document.getElementById('content').addEventListener('input', function() {
+  const charCount = this.value.length;
+  document.getElementById('charCount').textContent = charCount;
+});
+
+// Image preview functionality
+function previewImage(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('preview').src = e.target.result;
+      document.getElementById('imagePreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+// Remove image preview
+function removeImage() {
+  document.getElementById('image_file').value = '';
+  document.getElementById('imagePreview').style.display = 'none';
+}
+
+// Tag suggestions
+const popularTags = ['#portrait', '#sketch', '#watercolor', '#digital', '#traditional', '#beginner', '#tutorial', '#landscape', '#abstract', '#pencil'];
+
+document.getElementById('tags').addEventListener('focus', function() {
+  const suggestionsDiv = document.getElementById('tagSuggestions');
+  suggestionsDiv.innerHTML = '<small class="text-muted">Popular tags:</small><br>';
+  
+  popularTags.forEach(tag => {
+    const span = document.createElement('span');
+    span.className = 'tag-suggestion';
+    span.textContent = tag;
+    span.onclick = function() {
+      const tagsInput = document.getElementById('tags');
+      const currentValue = tagsInput.value;
+      if (!currentValue.includes(tag)) {
+        tagsInput.value = currentValue + (currentValue ? ' ' : '') + tag;
+      }
+    };
+    suggestionsDiv.appendChild(span);
+  });
+});
+
+// Form submission with loading state
+document.getElementById('postForm').addEventListener('submit', function() {
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Publishing...';
+  submitBtn.disabled = true;
+});
+
+// Auto-resize textarea
+document.getElementById('content').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = this.scrollHeight + 'px';
+});
+</script>
 {% endblock %}
